@@ -1,27 +1,23 @@
-directive @key(fields: _FieldSet!, resolvable: Boolean = true) repeatable on OBJECT | INTERFACE
+directive @key(
+  fields: _FieldSet!
+  resolvable: Boolean = true
+) repeatable on OBJECT | INTERFACE
+
 directive @requires(fields: _FieldSet!) on FIELD_DEFINITION
 
 directive @provides(fields: _FieldSet!) on FIELD_DEFINITION
 
 directive @external(reason: String) on OBJECT | FIELD_DEFINITION
 
-directive @tag(name: String!) repeatable on FIELD_DEFINITION | OBJECT | INTERFACE | UNION | ARGUMENT_DEFINITION | SCALAR | ENUM | ENUM_VALUE | INPUT_OBJECT | INPUT_FIELD_DEFINITION
+directive @tag(
+  name: String!
+) repeatable on FIELD_DEFINITION | OBJECT | INTERFACE | UNION | ARGUMENT_DEFINITION | SCALAR | ENUM | ENUM_VALUE | INPUT_OBJECT | INPUT_FIELD_DEFINITION
 
 directive @extends on OBJECT | INTERFACE
 
-type Mission {
+type Astronaut @key(fields: "id") {
   id: ID!
-  crew: [Astronaut]
-  designation: String!
-  startDate: String
-  endDate: String
-}
-
-extend type Astronaut
-  @key(fields: "id")
-{
-  id: ID! @external
-  missions: [Mission]
+  name: String
 }
 
 type Query {
@@ -30,8 +26,8 @@ type Query {
 }
 
 extend type Query {
-  mission(id: ID!): Mission
-  missions: [Mission]
+  astronaut(id: ID!): Astronaut
+  astronauts: [Astronaut]
 }
 
 scalar _FieldSet

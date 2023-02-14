@@ -1,17 +1,33 @@
 import ballerina/graphql;
 
 public type Mission record {|
-    int id;
-    int[] crew;
+    string id;
+    string[] crew;
     string designation;
-    string startDate;
-    string endDate;
+    string? startDate;
+    string? endDate;
 |};
 
 public type Astronaut record {|
-    int id;
+    string id;
     string name;
 |};
+
+type AstronautResponse record {
+    record {|Astronaut astronaut;|} data;
+};
+
+type AstronautsResponse record {
+    record {|Astronaut[] astronauts;|} data;
+};
+
+type MissionResponse record {
+    record {|Mission mission;|} data;
+};
+
+type MissionsResponse record {
+    record {|Mission[] missions;|} data;
+};
 
 service on new graphql:Listener(9000) {
 
@@ -28,6 +44,21 @@ service on new graphql:Listener(9000) {
         return astronaut;
     }
 
+    resource function get astronauts() returns Astronaut[]|error {
+        Astronaut[] astronauts = check self.astronauts();
+        return astronauts;
+    }
+
+    resource function get mission(int id) returns Mission|error {
+        Mission mission = check self.mission(id);
+        return mission;
+    }
+
+    resource function get missions() returns Mission[]|error {
+        Mission[] missions = check self.missions();
+        return missions;
+    }
+
     private function astronaut(int id) returns Astronaut|error {
         string query = string `query {
             astronaut(id: ${id}){
@@ -36,8 +67,35 @@ service on new graphql:Listener(9000) {
             }
         }`;
 
-        Astronaut astronaut = check self.astronaut_client->executeWithType(query);
-        return astronaut;
+        AstronautResponse response = check self.astronaut_client->executeWithType(query);
+        return response.data.astronaut;
+    }
+
+    private function astronauts() returns Astronaut[]|error {
+        string query = string `query {
+            astronauts{
+                id
+                name
+            }
+        }`;
+
+        AstronautsResponse response = check self.astronaut_client->executeWithType(query);
+        return response.data.astronauts;
+    }
+
+    private function mission(int id) returns Mission|error {
+        string query = string `query {
+            mission(id: ${id}){
+                id
+                crew
+                designation
+                startDate
+                endDate
+            }
+        }`;
+
+        MissionResponse response = check self.mission_client->executeWithType(query);
+        return response.data.mission;
     }
 
     private function missions() returns Mission[]|error {
@@ -51,7 +109,7 @@ service on new graphql:Listener(9000) {
             }
         }`;
 
-        Mission[] missions = check self.mission_client->executeWithType(query);
-        return missions;
+        MissionsResponse response = check self.mission_client->executeWithType(query);
+        return response.data.missions;
     }
 }

@@ -10,7 +10,7 @@ const apiUrl = "http://localhost:3000";
 const typeDefs = gql`
   type Mission {
     id: ID!
-    crew: [int]
+    crew: [ID]
     designation: String!
     startDate: String
     endDate: String
@@ -24,8 +24,8 @@ const typeDefs = gql`
 
 const resolvers = {
   Mission: {
-    crew(mission) {
-      return mission.crew.map(id => ({ __typename: "Astronaut", id }));
+    __resolveReference(ref) {
+      return fetch(`${apiUrl}/missions/${ref.id}`).then(res => res.json());
     }
   },
   Query: {
