@@ -1,11 +1,13 @@
 schema
   @link(url: "https://specs.apollo.dev/link/v1.0")
-  @link(url: "https://specs.apollo.dev/join/v0.2", for: EXECUTION) {
+  @link(url: "https://specs.apollo.dev/join/v0.3", for: EXECUTION) {
   query: Query
 }
 
+directive @join__enumValue(graph: join__Graph!) repeatable on ENUM_VALUE
+
 directive @join__field(
-  graph: join__Graph!
+  graph: join__Graph
   requires: join__FieldSet
   provides: join__FieldSet
   type: String
@@ -26,7 +28,13 @@ directive @join__type(
   key: join__FieldSet
   extension: Boolean! = false
   resolvable: Boolean! = true
+  isInterfaceObject: Boolean! = false
 ) repeatable on OBJECT | INTERFACE | UNION | ENUM | INPUT_OBJECT | SCALAR
+
+directive @join__unionMember(
+  graph: join__Graph!
+  member: String!
+) repeatable on UNION
 
 directive @link(
   url: String
@@ -35,9 +43,12 @@ directive @link(
   import: [link__Import]
 ) repeatable on SCHEMA
 
-type Astronaut @join__type(graph: ASTRONAUTS, key: "id") {
+type Astronaut
+  @join__type(graph: ASTRONAUTS, key: "id")
+  @join__type(graph: MISSIONS, key: "id") {
   id: ID!
-  name: String
+  name: String @join__field(graph: ASTRONAUTS)
+  missions: [Mission] @join__field(graph: MISSIONS)
 }
 
 scalar join__FieldSet
@@ -63,7 +74,7 @@ enum link__Purpose {
 
 type Mission @join__type(graph: MISSIONS) {
   id: ID!
-  crew: [ID]
+  crew: [Astronaut]
   designation: String!
   startDate: String
   endDate: String

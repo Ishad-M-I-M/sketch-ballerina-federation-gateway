@@ -1,0 +1,10 @@
+federation_version: 2
+subgraphs:
+  astronauts:
+    routing_url: http://localhost:4001
+    schema:
+      file: ./subgraphs/astronauts.graphql
+  missions:
+    routing_url: http://localhost:4002
+    schema:
+      file: ./subgraphs/missions.graphql

@@ -15,9 +15,17 @@ directive @tag(
 
 directive @extends on OBJECT | INTERFACE
 
-type Astronaut @key(fields: "id") {
+type Mission {
   id: ID!
-  name: String
+  crew: [Astronaut]
+  designation: String!
+  startDate: String
+  endDate: String
+}
+
+extend type Astronaut @key(fields: "id") {
+  id: ID! @external
+  missions: [Mission]
 }
 
 type Query {
@@ -26,8 +34,8 @@ type Query {
 }
 
 extend type Query {
-  astronaut(id: ID!): Astronaut
-  astronauts: [Astronaut]
+  mission(id: ID!): Mission
+  missions: [Mission]
 }
 
 scalar _FieldSet
