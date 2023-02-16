@@ -1,4 +1,7 @@
 
+// Service objects are generated for all type definitions in the supergraph sdl.
+// All objects will have a resolver object as a field and will be used to resolve the nested looping fields. 
+
 service class Mission {
     private Resolvers resolvers;
     private string id;
@@ -31,6 +34,9 @@ service class Mission {
     }
 
     resource function get crew() returns Astronaut[]|error {
+
+        // TODO: Generalize this logic
+
         AstronautSubgraph[] astronauts = check self.resolvers.astronauts();
         MissionSubgraph mission = check self.resolvers.mission(self.id);
         return astronauts.filter(function(AstronautSubgraph astronaut) returns boolean {
@@ -63,6 +69,9 @@ service class Astronaut {
     }
 
     resource function get missions() returns Mission[]|error {
+
+        // TODO: Generalize this logic
+
         MissionSubgraph[] missions = check self.resolvers.missions();
         return missions.filter(function(MissionSubgraph mission) returns boolean {
             return !(mission.crew.map(function(MissionSubgraphAstronaut astronaut) returns string {

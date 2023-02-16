@@ -1,7 +1,12 @@
 import ballerina/graphql;
 
+// Functions to fetch data from all subgraphs
+// Each function represent a Query type defined in the subgraph sdl
+// Query strings are declared according to the types generated in `types.bal`
+
 class Resolvers {
 
+    // client objects to connect with subgraphs
     final graphql:Client astronaut_client;
     final graphql:Client mission_client;
 
