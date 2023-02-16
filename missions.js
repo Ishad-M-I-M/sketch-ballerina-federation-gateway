@@ -10,10 +10,15 @@ const apiUrl = "http://localhost:3000";
 const typeDefs = gql`
   type Mission {
     id: ID!
-    crew: [ID]
+    crew: [Astronaut]
     designation: String!
     startDate: String
     endDate: String
+  }
+
+  extend type Astronaut @key(fields: "id") {
+    id: ID! @external
+    missions: [Mission]
   }
 
   extend type Query {
@@ -23,9 +28,19 @@ const typeDefs = gql`
 `;
 
 const resolvers = {
+  Astronaut: {
+    async missions(astronaut) {
+      const res = await fetch(`${apiUrl}/missions`);
+      const missions = await res.json();
+
+      return missions.filter(({ crew }) =>
+        crew.includes(parseInt(astronaut.id))
+      );
+    }
+  },
   Mission: {
-    __resolveReference(ref) {
-      return fetch(`${apiUrl}/missions/${ref.id}`).then(res => res.json());
+    crew(mission) {
+      return mission.crew.map(id => ({ __typename: "Astronaut", id }));
     }
   },
   Query: {
