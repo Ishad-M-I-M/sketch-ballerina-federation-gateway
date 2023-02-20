@@ -3,13 +3,13 @@
 // All objects will have a resolver object as a field and will be used to resolve the nested looping fields. 
 
 service class Mission {
-    private Resolvers resolvers;
+    private Client resolvers;
     private string id;
     private string designation;
     private string? startDate;
     private string? endDate;
 
-    public function init(Resolvers resolvers, string id, string designation, string? startDate, string? endDate) {
+    public function init(Client resolvers, string id, string designation, string? startDate, string? endDate) {
         self.resolvers = resolvers;
         self.id = id;
         self.designation = designation;
@@ -37,8 +37,8 @@ service class Mission {
 
         // TODO: Generalize this logic
 
-        AstronautSubgraph[] astronauts = check self.resolvers.astronauts();
-        MissionSubgraph mission = check self.resolvers.mission(self.id);
+        AstronautSubgraph[] astronauts = check self.resolvers->astronauts();
+        MissionSubgraph mission = check self.resolvers->mission(self.id);
         return astronauts.filter(function(AstronautSubgraph astronaut) returns boolean {
             return !(mission.crew.map(function(MissionSubgraphAstronaut astronaut_) returns string {
                 return astronaut_.id;
@@ -50,11 +50,11 @@ service class Mission {
 }
 
 service class Astronaut {
-    private Resolvers resolvers;
+    private Client resolvers;
     private string id;
     private string name;
 
-    public function init(Resolvers resolvers, string id, string name) {
+    public function init(Client resolvers, string id, string name) {
         self.resolvers = resolvers;
         self.id = id;
         self.name = name;
@@ -72,7 +72,7 @@ service class Astronaut {
 
         // TODO: Generalize this logic
 
-        MissionSubgraph[] missions = check self.resolvers.missions();
+        MissionSubgraph[] missions = check self.resolvers->missions();
         return missions.filter(function(MissionSubgraph mission) returns boolean {
             return !(mission.crew.map(function(MissionSubgraphAstronaut astronaut) returns string {
                 return astronaut.id;

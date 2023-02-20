@@ -4,7 +4,7 @@ import ballerina/graphql;
 // Each function represent a Query type defined in the subgraph sdl
 // Query strings are declared according to the types generated in `types.bal`
 
-class Resolvers {
+service class Client {
 
     // client objects to connect with subgraphs
     final graphql:Client astronaut_client;
@@ -15,7 +15,7 @@ class Resolvers {
         self.mission_client = check new ("http://localhost:4002");
     }
 
-    public function astronaut(string id) returns AstronautSubgraph|error {
+    remote function astronaut(string id) returns AstronautSubgraph|error {
         string query = string `query {
             astronaut(id: ${id}){
                 id
@@ -27,7 +27,7 @@ class Resolvers {
         return response.data.astronaut;
     }
 
-    public function astronauts() returns AstronautSubgraph[]|error {
+    remote function astronauts() returns AstronautSubgraph[]|error {
         string query = string `query {
             astronauts{
                 id
@@ -39,7 +39,7 @@ class Resolvers {
         return response.data.astronauts;
     }
 
-    public function mission(string id) returns MissionSubgraph|error {
+    remote function mission(string id) returns MissionSubgraph|error {
         string query = string `query {
             mission(id: ${id}){
                 id
@@ -56,7 +56,7 @@ class Resolvers {
         return response.data.mission;
     }
 
-    public function missions() returns MissionSubgraph[]|error {
+    remote function missions() returns MissionSubgraph[]|error {
         string query = string `query {
             missions{
                 id
