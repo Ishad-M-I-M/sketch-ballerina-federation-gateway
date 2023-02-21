@@ -2,7 +2,12 @@
 org = "mohamed_ishad"
 name = "initial_impl"
 version = "0.1.0"
-distribution = "2201.4.0"
 
 [build-options]
 observabilityIncluded = true
+
+[[dependency]]
+name = "graphql"
+org = "ballerina"
+version = "1.6.1"
+repository = "local"
