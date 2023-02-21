@@ -3,14 +3,14 @@
 // All objects will have a resolver object as a field and will be used to resolve the nested looping fields. 
 
 service class Mission {
-    private Client resolvers;
+    private Client 'client;
     private string id;
     private string designation;
     private string? startDate;
     private string? endDate;
 
-    public function init(Client resolvers, string id, string designation, string? startDate, string? endDate) {
-        self.resolvers = resolvers;
+    public function init(Client 'client, string id, string designation, string? startDate, string? endDate) {
+        self.'client = 'client;
         self.id = id;
         self.designation = designation;
         self.startDate = startDate;
@@ -37,25 +37,25 @@ service class Mission {
 
         // TODO: Generalize this logic
 
-        AstronautSubgraph[] astronauts = check self.resolvers->astronauts();
-        MissionSubgraph mission = check self.resolvers->mission(self.id);
+        AstronautSubgraph[] astronauts = check self.'client->astronauts();
+        MissionSubgraph mission = check self.'client->mission(self.id);
         return astronauts.filter(function(AstronautSubgraph astronaut) returns boolean {
             return !(mission.crew.map(function(MissionSubgraphAstronaut astronaut_) returns string {
                 return astronaut_.id;
             }).indexOf(astronaut.id) is ());
         }).map(function(AstronautSubgraph astronaut) returns Astronaut {
-            return new (self.resolvers, astronaut.id, astronaut.name);
+            return new (self.'client, astronaut.id, astronaut.name);
         });
     }
 }
 
 service class Astronaut {
-    private Client resolvers;
+    private Client 'client;
     private string id;
     private string name;
 
-    public function init(Client resolvers, string id, string name) {
-        self.resolvers = resolvers;
+    public function init(Client 'client, string id, string name) {
+        self.'client = 'client;
         self.id = id;
         self.name = name;
     }
@@ -72,13 +72,13 @@ service class Astronaut {
 
         // TODO: Generalize this logic
 
-        MissionSubgraph[] missions = check self.resolvers->missions();
+        MissionSubgraph[] missions = check self.'client->missions();
         return missions.filter(function(MissionSubgraph mission) returns boolean {
             return !(mission.crew.map(function(MissionSubgraphAstronaut astronaut) returns string {
                 return astronaut.id;
             }).indexOf(self.id) is ());
         }).map(function(MissionSubgraph mission) returns Mission {
-            return new (self.resolvers, mission.id, mission.designation, mission.startDate, mission.endDate);
+            return new (self.'client, mission.id, mission.designation, mission.startDate, mission.endDate);
         });
     }
 }
