@@ -9,31 +9,73 @@ public function filterFields(string[] keys, map<graphql:fieldDocument> fields) r
     return queryField;
 }
 
-service class Astronaut {
+public function getFieldsToFetch(map<anydata> fetchedFields, map<graphql:fieldDocument> fields) returns string[] {
+    string[] fieldsToFetch = [];
+    foreach var [key, value] in fields.entries() {
+        if (value is graphql:fieldDocument) {
+            if !(fetchedFields.keys().indexOf(key) is ()) {
+                fieldsToFetch.push(key);
+            }
+        }
+    }
+    return fieldsToFetch;
+}
 
+service class Astronaut {
     // map to keep track of the fields along with the resolving subgraph
     map<string> fieldMap = {
         "id": "astronauts",
         "name": "astronauts",
         "missions": "missions"
     };
-    private int id;
-    private string? name;
-    private MissionRecord[]? missions;
+    private string id;
+    private string? name = ();
+    private Mission[]? missions = ();
 
-    function init(map<graphql:fieldDocument> fields, map<graphql:Client> clients, int id, string? name = (), MissionRecord[]? missions = ()) returns error? {
-        self.id = id;
-        self.name = name;
-        self.missions = missions;
+    function init(map<graphql:fieldDocument> fields, map<graphql:Client> clients, AstronautRecord fetchedFields) returns error? {
 
-        io:println(fields);
+        // Assigning the already fetched fields
+        // For the key field
+        io:println("\n\n[DEBUG - ASTRONAUT] Fetched Fields :\n", fetchedFields);
+        if (fetchedFields.id is ()) {
+            panic error("ID is required");
+        }
+        else {
+            self.id = <string>fetchedFields.id;
+            _ = fields.remove("id");
+        }
+
+        // For the rest fields
+        if !(fetchedFields.name is ()) {
+            self.name = fetchedFields.name;
+            _ = fields.remove("name");
+        }
+
+        if !(fetchedFields.missions is ()) {
+            map<graphql:fieldDocument> missionsFields = <map<graphql:fieldDocument>>fields["missions"];
+            self.missions = (<MissionRecord[]>fetchedFields.missions).map(
+                function(MissionRecord mission) returns Mission {
+                Mission|error _mission = new (missionsFields, clients, mission);
+                if (_mission is Mission) {
+                    return _mission;
+                }
+                else {
+                    panic error("Error while creating the mission");
+                }
+            }
+            );
+            _ = fields.remove("missions");
+        }
+
+        // Resolving the fields which are requested and not fetched yet.
+        io:println("\n\n[DEBUG - ASTRONAUT] Remaining Fields to fetch :\n", fields);
 
         map<string[]> resolve = {};
         foreach var 'field in fields.keys() {
             resolve[self.fieldMap.get('field)] = (resolve[self.fieldMap.get('field)] is ()) ? ['field] : [...<string[]>resolve[self.fieldMap.get('field)], 'field];
         }
 
-        io:println(resolve);
+        io:println("\n\n[DEBUG - ASTRONAUT] Cients resolving the fields :\n", resolve);
 
         foreach var [key, value] in resolve.entries() {
             if (key == "astronauts") {
@@ -41,12 +83,22 @@ service class Astronaut {
                 if ('client is ()) {
                     panic error("Client not found for the service");
                 }
-                DocumentBuilder query = new ("astronaut", filterFields(value, fields), {"id": self.id});
+                string query = string `query {
+                    astronaut(id: ${self.id}) {
+                        ${buildQueryString(filterFields(value, fields))}
+                    }
+                }`;
 
-                io:println(query.getQueryString());
+                io:println("\n\n[DEBUG - ASTRONAUT] Query to fetch from the astronuts subgraph:\n", query);
 
-                AstronautRecordResponse response = check 'client->execute(query.getQueryString());
-                self.name = response.data.astronaut.name;
+                AstronautRecordResponse response = check 'client->execute(query);
+                AstronautRecord result = response.data.astronaut;
+
+                // Assigning the fetched fields
+                if !(result.name is ()) {
+                    self.name = result.name;
+                }
+
             }
             else if (key == "missions") {
                 graphql:Client? 'client = clients[key];
@@ -55,29 +107,42 @@ service class Astronaut {
                 }
 
                 string query = string `query {
-    _entities(representations:[
-    {
-        __typename: "Astronaut"
-        id: ${self.id}
-    }    
-    ]){
-        ... on Astronaut{
-            ${buildQueryString(filterFields(value, fields))}
-        }
-    }
-}`;
-                io:print(query);
+                    _entities(representations:[
+                    {
+                        __typename: "Astronaut"
+                        id: ${self.id}
+                    }    
+                    ]){
+                        ... on Astronaut{
+                            ${buildQueryString(filterFields(value, fields))}
+                        }
+                    }
+                }`;
+                io:print("\n\n[DEBUG - ASTRONAUT] qury to fetch missions:\n", query);
                 EntityAstronautResponse response = check 'client->execute(query);
-                self.missions = response.data._entities[0].missions;
+                AstronautRecord result = <AstronautRecord>response.data._entities[0];
 
-                MissionRecord[] missionRecords = [];
+                if !(result.missions is ()) {
+                    map<graphql:fieldDocument> missionsFields = <map<graphql:fieldDocument>>fields["missions"];
+                    self.missions = (<MissionRecord[]>result.missions).map(
+                        function(MissionRecord mission) returns Mission {
+                        Mission|error _mission = new (missionsFields, clients, mission);
+                        if (_mission is Mission) {
+                            return _mission;
+                        }
+                        else {
+                            panic error("Error while creating the mission");
+                        }
+                    }
+                    );
+                }
 
             }
         }
 
     }
 
-    resource function get id() returns int {
+    resource function get id() returns string {
         return self.id;
     }
 
@@ -85,7 +150,7 @@ service class Astronaut {
         return self.name;
     }
 
-    resource function get missions() returns MissionRecord[]? {
+    resource function get missions() returns Mission[]? {
         return self.missions;
     }
 
@@ -98,49 +163,135 @@ service class Mission {
         "designation": "missions",
         "startDate": "missions",
         "endDate": "missions",
-        "crew": "astronauts"
+        "crew": "missions"
     };
 
-    private int id;
-    private string? designation;
-    private string? startDate;
-    private string? endDate;
-    private AstronautRecord[]? crew;
+    private string id;
+    private string? designation = ();
+    private string? startDate = ();
+    private string? endDate = ();
+    private Astronaut[]? crew = ();
 
-    function init(map<graphql:fieldDocument> fields, map<graphql:Client> clients, int id, string? designation = (), string? startDate = (), string? endDate = (), AstronautRecord[]? crew = ()) returns error? {
-        self.id = id;
-        self.designation = designation;
-        self.startDate = startDate;
-        self.endDate = endDate;
-        self.crew = crew;
+    function init(map<graphql:fieldDocument> fields, map<graphql:Client> clients, MissionRecord fetchedFields) returns error? {
+
+        // Assigning the already fetched fields
+        // For the key field
+        io:println("\n\n[DEBUG - MISSION] Fetched Fields :\n", fetchedFields);
+        if (fetchedFields.id is ()) {
+            panic error("ID is required");
+        }
+        else {
+            self.id = <string>fetchedFields.id;
+            _ = fields.remove("id");
+        }
+
+        // For the rest fields
+        if !(fetchedFields.designation is ()) {
+            self.designation = fetchedFields.designation;
+            _ = fields.remove("designation");
+        }
+
+        if !(fetchedFields?.startDate is ()) {
+            self.startDate = fetchedFields?.startDate;
+            _ = fields.remove("startDate");
+        }
+
+        if !(fetchedFields?.endDate is ()) {
+            self.endDate = fetchedFields?.endDate;
+            _ = fields.remove("endDate");
+        }
+
+        if !(fetchedFields.crew is ()) {
+            map<graphql:fieldDocument> crewFields = <map<graphql:fieldDocument>>fields["crew"];
+            self.crew = (<AstronautRecord[]>fetchedFields.crew).map(
+                    function(AstronautRecord astronaut) returns Astronaut {
+                Astronaut|error _astronaut = new (crewFields, clients, astronaut);
+                if (_astronaut is Astronaut) {
+                    return _astronaut;
+                }
+                else {
+                    panic error("Error while creating the astronaut");
+                }
+            }
+                );
+            _ = fields.remove("crew");
+        }
+
+        // Resolving the fields which are requested and not fetched yet.
+        io:println("\n\n[DEBUG - MISSION] Remaining Fields to fetch :\n", fields);
 
         map<string[]> resolve = {};
         foreach var 'field in fields.keys() {
             resolve[self.fieldMap.get('field)] = (resolve[self.fieldMap.get('field)] is ()) ? ['field] : [...<string[]>resolve[self.fieldMap.get('field)], 'field];
         }
 
+        io:println("\n\n[DEBUG - MISSION] Cients resolving the fields :\n", resolve);
+
         foreach var [key, value] in resolve.entries() {
-            if (key == "astronauts") {
+            if (key == "missions") {
                 graphql:Client? 'client = clients[key];
                 if ('client is ()) {
                     panic error("Client not found for the service");
                 }
                 string query = string `query {
-    _entities(representations:[]){
-        ... on Astronaut{
-            ${buildQueryString(filterFields(value, fields))}
-        }
-    }
-                }`;
-            }
-            else if (key == "missions") {
-                graphql:Client? 'client = clients[key];
-                if ('client is ()) {
-                    panic error("Client not found for the service");
+                        mission(id: ${self.id}) {
+                            ${buildQueryString(filterFields(value, fields))}
+                        }
+                    }`;
+
+                io:println("\n\n[DEBUG - MISSION] Query to fetch from the missions subgraph:\n", query);
+
+                MissionRecordResponse response = check 'client->execute(query);
+                MissionRecord result = response.data.mission;
+
+                // Assigning the fetched fields
+                if !(result.designation is ()) {
+                    self.designation = result.designation;
                 }
 
+                if !(result?.startDate is ()) {
+                    self.startDate = result?.startDate;
+                }
+
+                if !(result?.endDate is ()) {
+                    self.endDate = result?.endDate;
+                }
+
+                if !(result.crew is ()) {
+                    map<graphql:fieldDocument> crewFields = <map<graphql:fieldDocument>>fields["crew"];
+                    self.crew = (<AstronautRecord[]>result.crew).map(
+                    function(AstronautRecord astronaut) returns Astronaut {
+                        Astronaut|error _astronaut = new (crewFields, clients, astronaut);
+                        if (_astronaut is Astronaut) {
+                            return _astronaut;
+                        }
+                        else {
+                            panic error("Error while creating the astronaut");
+                        }
+                    }
+                );
+                }
             }
         }
+    }
 
+    resource function get id() returns string {
+        return self.id;
+    }
+
+    resource function get designation() returns string? {
+        return self.designation;
+    }
+
+    resource function get startDate() returns string? {
+        return self.startDate;
+    }
+
+    resource function get endDate() returns string? {
+        return self.endDate;
+    }
+
+    resource function get crew() returns Astronaut[]? {
+        return self.crew;
     }
 }

@@ -12,26 +12,63 @@ service on new graphql:Listener(9000) {
     }
 
     resource function get astronaut(graphql:Field 'field, int id) returns Astronaut|error {
-        return new Astronaut('field.getQueryDocument(), self.clients, id);
+        return new Astronaut('field.getQueryDocument(), self.clients, {id: id.toString()});
     }
 
-    // resource function get astronauts() returns Astronaut[]|error {
-    //     AstronautSubgraph[] astronauts = check self.'client->astronauts();
-    //     return astronauts.map(function(AstronautSubgraph astronaut) returns Astronaut {
-    //         return new Astronaut(self.'client, astronaut.id, astronaut.name);
-    //     });
-    // }
+    resource function get astronauts(graphql:Field 'field) returns Astronaut[]|error {
+        if (self.clients["astronauts"] == ()) {
+            return error("Client not found");
+        }
+        else {
+            graphql:Client 'client = <graphql:Client>self.clients["astronauts"];
 
-    // resource function get mission(int id) returns Mission|error {
-    //     MissionSubgraph mission = check self.'client->mission(id.toString());
-    //     return new Mission(self.'client, mission.id, mission.designation, mission?.startDate, mission?.endDate);
-    // }
+            string query = string `query{
+                astronauts {
+                    ${buildQueryString(filterFields(["id", "name"], 'field.getQueryDocument()))}
+                }
+            }`;
 
-    // resource function get missions() returns Mission[]|error {
-    //     MissionSubgraph[] missions = check self.'client->missions();
-    //     return missions.map(function(MissionSubgraph mission) returns Mission {
-    //         return new Mission(self.'client, mission.id, mission.designation, mission?.startDate, mission?.endDate);
-    //     });
-    // }
+            AstronautsRecordResponse result = check 'client->execute(query);
+            return result.data.astronauts.map(function(AstronautRecord astronaut) returns Astronaut {
+                Astronaut|error _astronaut = new ('field.getQueryDocument(), self.clients, astronaut);
+                if (_astronaut is Astronaut) {
+                    return _astronaut;
+                }
+                else {
+                    panic error("Error while creating the astronaut");
+                }
+            });
+        }
+    }
+
+    resource function get mission(graphql:Field 'field, int id) returns Mission|error {
+        return new Mission('field.getQueryDocument(), self.clients, {id: id.toString()});
+    }
+
+    resource function get missions(graphql:Field 'field) returns Mission[]|error {
+        if (self.clients["missions"] == ()) {
+            return error("Client not found");
+        }
+        else {
+            graphql:Client 'client = <graphql:Client>self.clients["missions"];
+
+            string query = string `query{
+                missions {
+                    ${buildQueryString('field.getQueryDocument())}
+                }
+            }`;
+
+            MissionsRecordResponse result = check 'client->execute(query);
+            return result.data.missions.map(function(MissionRecord mission) returns Mission {
+                Mission|error _mission = new ('field.getQueryDocument(), self.clients, mission);
+                if (_mission is Mission) {
+                    return _mission;
+                }
+                else {
+                    panic error("Error while creating the mission");
+                }
+            });
+        }
+    }
 
 }
