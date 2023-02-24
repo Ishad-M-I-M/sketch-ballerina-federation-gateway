@@ -14,87 +14,83 @@ service on new graphql:Listener(9000) {
 
     resource function get astronaut(graphql:Field 'field, int id) returns Astronaut|error {
 
-        //adding key field even not requested.
-        map<graphql:fieldDocument> fields = 'field.getQueryDocument();
-        fields["id"] = ();
-
-        return new Astronaut(fields, self.clients, {id: id.toString()});
     }
 
     resource function get astronauts(graphql:Field 'field) returns Astronaut[]|error {
 
-        //adding key field even not requested.
-        map<graphql:fieldDocument> fields = 'field.getQueryDocument();
-        fields["id"] = ();
-
-        io:println("\n\n[DEBUG - MAIN] requested fields:\n", fields);
-
-        if (self.clients["astronauts"] == ()) {
-            return error("Client not found");
-        }
-        else {
-            graphql:Client 'client = <graphql:Client>self.clients["astronauts"];
-
-            string query = string `query{
-                astronauts {
-                    ${buildQueryString(filterFields(fields.keys(), fields))}
-                }
-            }`;
-
-            io:println("\n\n[DEBUG - MAIN] query to fetch astronauts:\n", query);
-
-            AstronautsRecordResponse result = check 'client->execute(query);
-            return result.data.astronauts.map(function(AstronautRecord astronaut) returns Astronaut {
-                io:println("\n\n[DEBUG - MAIN] ", astronaut);
-                Astronaut|error _astronaut = new (fields, self.clients, astronaut);
-                if (_astronaut is Astronaut) {
-                    return _astronaut;
-                }
-                else {
-                    panic error("Error while creating the astronaut");
-                }
-            });
-        }
     }
 
     resource function get mission(graphql:Field 'field, int id) returns Mission|error {
 
-        //adding key field even not requested.
-        map<graphql:fieldDocument> fields = 'field.getQueryDocument();
-        fields["id"] = ();
-
-        return new Mission(fields, self.clients, {id: id.toString()});
     }
 
     resource function get missions(graphql:Field 'field) returns Mission[]|error {
+        // "id", "designation", "startDate", "endDate", "crew" - solved directly from the `missions` client.
+        // "crew"."name" - resolved from the `astronauts` client using _entities query.
+    }
 
-        //adding key field even not requested.
-        map<graphql:fieldDocument> fields = 'field.getQueryDocument();
-        fields["id"] = ();
+    private function resolveAstronaut(map<graphql:fieldDocument> 'field, int id) returns Astronaut|error {
+        // "id", "name" - solved directly from the `astronauts` client.
+        // "missions" - resolved from the `missions` client using `_entities` query.
 
-        if (self.clients["missions"] == ()) {
-            return error("Client not found");
-        }
-        else {
-            graphql:Client 'client = <graphql:Client>self.clients["missions"];
+        // What if requested:
+        // query{
+        //     astronaut(id: ${id}){
+        //         id
+        //         name
+        //         missions{
+        //             id
+        //             designation
+        //             startDate
+        //             endDate
+        //             crew{
+        //                 name
+        //                 missions{
+        //                      designation
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
 
-            string query = string `query{
-                missions {
-                    ${buildQueryString(fields)}
-                }
-            }`;
+        // request to `astronauts` client:
+        // path: []
+        // query {
+        //     astronaut(id: ${id}){
+        //         id
+        //         name
+        //     }
+        // }
 
-            MissionsRecordResponse result = check 'client->execute(query);
-            return result.data.missions.map(function(MissionRecord mission) returns Mission {
-                Mission|error _mission = new (fields, self.clients, mission);
-                if (_mission is Mission) {
-                    return _mission;
-                }
-                else {
-                    panic error("Error while creating the mission");
-                }
-            });
-        }
+        // request to `missions` client:
+        // path: ["astronaut"]
+        // query{
+        //     _entities(representations: [
+        //         {
+        //             __typename: "Astronaut"
+        //            "id": ${id}
+        //         }
+        //     ]){
+        //         ... on Astronaut{
+        //             missions{
+        //                 id
+        //                 designation
+        //                 startDate
+        //                 endDate
+        //                 crew{
+        //                     id                 <-- need to fetch even not requested.
+        //                     missions{
+        //                         designation  
+        //                      }
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
+
+        // How to resolve `name` of `crew`?.
+        // Parse through the 'field document while assigning the fetched values. Fetch and assign the fields that are null.
+
     }
 
 }
