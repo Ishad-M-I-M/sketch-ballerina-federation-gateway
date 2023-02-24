@@ -1,5 +1,18 @@
 import ballerina/graphql;
 
+public function buildQueryString(map<graphql:fieldDocument> fields) returns string {
+    string[] queryStrings = [];
+
+    foreach var [key, value] in fields.entries() {
+        if (value is map<json>) {
+            queryStrings.push(key + " {\n" + buildQueryString(value) + "\n}\n");
+        } else {
+            queryStrings.push(key);
+        }
+    }
+    return string:'join(" \n ", ...queryStrings);
+}
+
 class DocumentBuilder {
     private string root;
     private map<graphql:fieldDocument> fields;
@@ -27,26 +40,13 @@ class DocumentBuilder {
     # }
     #
     # + return - The query document as a string
-    public function getQueryDocument() returns string {
+    public function getQueryString() returns string {
         string query = string `query {
             ${self.root}${self.getArgs()} {
-                ${self.buildQueryString(self.fields)}
+                ${buildQueryString(self.fields)}
             }
         }`;
         return query;
-    }
-
-    private function buildQueryString(map<graphql:fieldDocument> fields) returns string {
-        string[] queryStrings = [];
-
-        foreach var [key, value] in fields.entries() {
-            if (value is map<json>) {
-                queryStrings.push(key + " {\n" + self.buildQueryString(value) + "\n}\n");
-            } else {
-                queryStrings.push(key);
-            }
-        }
-        return string:'join(" \n ", ...queryStrings);
     }
 
     private function getArgs() returns string {
