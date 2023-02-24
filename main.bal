@@ -45,6 +45,7 @@ service on new graphql:Listener(9000) {
 
             AstronautsRecordResponse result = check 'client->execute(query);
             return result.data.astronauts.map(function(AstronautRecord astronaut) returns Astronaut {
+                io:println("\n\n[DEBUG - MAIN] ", astronaut);
                 Astronaut|error _astronaut = new (fields, self.clients, astronaut);
                 if (_astronaut is Astronaut) {
                     return _astronaut;

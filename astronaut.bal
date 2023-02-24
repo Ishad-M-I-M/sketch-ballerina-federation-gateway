@@ -13,7 +13,7 @@ public service class Astronaut {
     private Mission[]? missions = ();
 
     function init(map<graphql:fieldDocument> fields, map<graphql:Client> clients, AstronautRecord fetchedFields) returns error? {
-
+        map<graphql:fieldDocument> _fields = fields.clone();
         // Assigning the already fetched fields
         // For the key field
         io:println("\n\n[DEBUG - ASTRONAUT] Fetched Fields :\n", fetchedFields);
@@ -22,17 +22,17 @@ public service class Astronaut {
         }
         else {
             self.id = <string>fetchedFields.id;
-            _ = fields.remove("id");
+            _ = _fields.remove("id");
         }
 
         // For the rest fields
-        if !(fields.keys().indexOf("name") is () && fetchedFields.name is ()) {
+        if !(_fields.keys().indexOf("name") is () && fetchedFields.name is ()) {
             self.name = fetchedFields.name;
-            _ = fields.remove("name");
+            _ = _fields.remove("name");
         }
 
-        if !(fields.keys().indexOf("missions") is () && fetchedFields.missions is ()) {
-            map<graphql:fieldDocument> missionsFields = <map<graphql:fieldDocument>>fields["missions"];
+        if !(_fields.keys().indexOf("missions") is () && fetchedFields.missions is ()) {
+            map<graphql:fieldDocument> missionsFields = <map<graphql:fieldDocument>>_fields["missions"];
             self.missions = (<MissionRecord[]>fetchedFields.missions).map(
                 function(MissionRecord mission) returns Mission {
                 Mission|error _mission = new (missionsFields, clients, mission);
@@ -44,14 +44,14 @@ public service class Astronaut {
                 }
             }
             );
-            _ = fields.remove("missions");
+            _ = _fields.remove("missions");
         }
 
         // Resolving the fields which are requested and not fetched yet.
-        io:println("\n\n[DEBUG - ASTRONAUT] Remaining Fields to fetch :\n", fields);
+        io:println("\n\n[DEBUG - ASTRONAUT] Remaining Fields to fetch :\n", _fields);
 
         map<string[]> resolve = {};
-        foreach var 'field in fields.keys() {
+        foreach var 'field in _fields.keys() {
             resolve[self.fieldMap.get('field)] = (resolve[self.fieldMap.get('field)] is ()) ? ['field] : [...<string[]>resolve[self.fieldMap.get('field)], 'field];
         }
 
@@ -65,7 +65,7 @@ public service class Astronaut {
                 }
                 string query = string `query {
                     astronaut(id: ${self.id}) {
-                        ${buildQueryString(filterFields(value, fields))}
+                        ${buildQueryString(filterFields(value, _fields))}
                     }
                 }`;
 
@@ -75,7 +75,7 @@ public service class Astronaut {
                 AstronautRecord result = response.data.astronaut;
 
                 // Assigning the fetched fields
-                if !(fields.keys().indexOf("name") is () && result.name is ()) {
+                if !(_fields.keys().indexOf("name") is () && result.name is ()) {
                     self.name = result.name;
                 }
 
@@ -94,7 +94,7 @@ public service class Astronaut {
                     }    
                     ]){
                         ... on Astronaut{
-                            ${buildQueryString(filterFields(value, fields))}
+                            ${buildQueryString(filterFields(value, _fields))}
                         }
                     }
                 }`;
@@ -102,8 +102,8 @@ public service class Astronaut {
                 EntityAstronautResponse response = check 'client->execute(query);
                 AstronautRecord result = <AstronautRecord>response.data._entities[0];
 
-                if !(fields.keys().indexOf("missions") is () && result.missions is ()) {
-                    map<graphql:fieldDocument> missionsFields = <map<graphql:fieldDocument>>fields["missions"];
+                if !(_fields.keys().indexOf("missions") is () && result.missions is ()) {
+                    map<graphql:fieldDocument> missionsFields = <map<graphql:fieldDocument>>_fields["missions"];
                     self.missions = (<MissionRecord[]>result.missions).map(
                         function(MissionRecord mission) returns Mission {
                         Mission|error _mission = new (missionsFields, clients, mission);

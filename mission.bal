@@ -18,7 +18,7 @@ public service class Mission {
     private Astronaut[]? crew = ();
 
     function init(map<graphql:fieldDocument> fields, map<graphql:Client> clients, MissionRecord fetchedFields) returns error? {
-
+        map<graphql:fieldDocument> _fields = fields.clone();
         // Assigning the already fetched fields
         // For the key field
         io:println("\n\n[DEBUG - MISSION] Fetched Fields :\n", fetchedFields);
@@ -27,27 +27,27 @@ public service class Mission {
         }
         else {
             self.id = <string>fetchedFields.id;
-            _ = fields.remove("id");
+            _ = _fields.remove("id");
         }
 
         // For the rest fields
         if !(fetchedFields.designation is ()) {
             self.designation = fetchedFields.designation;
-            _ = fields.remove("designation");
+            _ = _fields.remove("designation");
         }
 
         if !(fetchedFields?.startDate is ()) {
             self.startDate = fetchedFields?.startDate;
-            _ = fields.remove("startDate");
+            _ = _fields.remove("startDate");
         }
 
         if !(fetchedFields?.endDate is ()) {
             self.endDate = fetchedFields?.endDate;
-            _ = fields.remove("endDate");
+            _ = _fields.remove("endDate");
         }
 
         if !(fetchedFields.crew is ()) {
-            map<graphql:fieldDocument> crewFields = <map<graphql:fieldDocument>>fields["crew"];
+            map<graphql:fieldDocument> crewFields = <map<graphql:fieldDocument>>_fields["crew"];
             self.crew = (<AstronautRecord[]>fetchedFields.crew).map(
                     function(AstronautRecord astronaut) returns Astronaut {
                 Astronaut|error _astronaut = new (crewFields, clients, astronaut);
@@ -59,14 +59,14 @@ public service class Mission {
                 }
             }
                 );
-            _ = fields.remove("crew");
+            _ = _fields.remove("crew");
         }
 
         // Resolving the fields which are requested and not fetched yet.
-        io:println("\n\n[DEBUG - MISSION] Remaining Fields to fetch :\n", fields);
+        io:println("\n\n[DEBUG - MISSION] Remaining Fields to fetch :\n", _fields);
 
         map<string[]> resolve = {};
-        foreach var 'field in fields.keys() {
+        foreach var 'field in _fields.keys() {
             resolve[self.fieldMap.get('field)] = (resolve[self.fieldMap.get('field)] is ()) ? ['field] : [...<string[]>resolve[self.fieldMap.get('field)], 'field];
         }
 
@@ -80,7 +80,7 @@ public service class Mission {
                 }
                 string query = string `query {
                         mission(id: ${self.id}) {
-                            ${buildQueryString(filterFields(value, fields))}
+                            ${buildQueryString(filterFields(value, _fields))}
                         }
                     }`;
 
@@ -103,7 +103,7 @@ public service class Mission {
                 }
 
                 if !(result.crew is ()) {
-                    map<graphql:fieldDocument> crewFields = <map<graphql:fieldDocument>>fields["crew"];
+                    map<graphql:fieldDocument> crewFields = <map<graphql:fieldDocument>>_fields["crew"];
                     self.crew = (<AstronautRecord[]>result.crew).map(
                     function(AstronautRecord astronaut) returns Astronaut {
                         Astronaut|error _astronaut = new (crewFields, clients, astronaut);
