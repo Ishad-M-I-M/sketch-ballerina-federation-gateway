@@ -26,7 +26,7 @@
             "type": "ballerina",
             "request": "attach",
             "debuggeeHost": "127.0.0.1",
-            "debuggeePort": "9000"
+            "debuggeePort": "5010"
         }
     ]
 }
