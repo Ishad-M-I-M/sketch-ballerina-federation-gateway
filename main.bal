@@ -1,5 +1,12 @@
 import ballerina/graphql;
+import ballerina/io;
 
+@graphql:ServiceConfig{
+    graphiql: {
+        enabled: true,
+        path: "/testing"
+    }
+}
 service on new graphql:Listener(9000) {
 
     private map<graphql:Client> clients;
@@ -12,26 +19,19 @@ service on new graphql:Listener(9000) {
     }
 
     resource function get astronaut(graphql:Field 'field, int id) returns Astronaut|error {
-        graphql:Field[] fields = 'field.getSubfields();
         Resolver resolver = new Resolver(self.clients);
 
         graphql:Client 'client = self.clients.get("astronauts");
 
-        if !(fields.keys().indexOf("missions") is ()) {
-            graphql:fieldDocument remainFields = fields.get("missions");
-            _ = fields.remove("missions");
-            resolver.pushToResolve({
-                'client: "missions",
-                ids: [[id.toString()]],
-                typename: "Astronaut",
-                path: ["missions"],
-                fields: {"missions": remainFields}
-            });
-        }
+        graphql:Field[]? subfields = 'field.getSubfields();
+
+        if subfields is (){
+            return error("Invalid graphql document");
+        }        
+
+        AstronautResponse response = check 'client->execute(wrapwithQuery("astronaut", buildQueryString(subfields, "astronauts", resolver), {"id": id.toString()}));
 
         ResolvedRecord[] records = resolver.execute();
-
-        AstronautResponse response = check 'client->execute(wrapwithQuery("astronaut", buildQueryString(fields), {"id": id.toString()}));
 
         Astronaut result = response.data.astronaut;
 

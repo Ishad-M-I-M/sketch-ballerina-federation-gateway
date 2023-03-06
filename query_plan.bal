@@ -2,19 +2,19 @@
 string[] typenames = ["Astronaut", "Mission"];
 string[] scalarTypes = ["ID", "STRING", "INT", "FLOAT", "BOOLEAN"];
 
-type fieldRecord record {|
+public type fieldRecord record {|
     readonly string name;
     string 'type;
     string 'client;
 |};
 
-type queryPlanEntry record {|
+public type queryPlanEntry record {|
     readonly string typename;
     string key;
     table<fieldRecord> key(name) fields;
 |};
 
-table<queryPlanEntry> key(typename) queryPlan = table [
+public table<queryPlanEntry> key(typename) queryPlan = table [
     {
         typename: "Astronaut",
         key: "id",

@@ -10,9 +10,9 @@ type ModifiedField record {|
     RemovedRecords[] removedRecords;
 |};
 
-class Resolver {
+public class Resolver {
 
-    private ResolveRecord[] toBeResolved;
+    private graphql:Field[] toBeResolved;
     private ResolvedRecord[] results;
     private map<graphql:Client> clients;
 
@@ -31,23 +31,7 @@ class Resolver {
 
             if 'record.'client == "missions" {
                 // Cannot resolve the `name` field of `crew`
-                ModifiedField result = self.checkForFieldsAndRemove('record.fields, ["crew", "name"], 'record.path);
-
-                EntityAstronautResponse response = check 'client->execute(wrapWithEntityRepresentation(buildQueryString('record.fields), 'record.ids[0], 'record.typename));
-                self.results.push({
-                    path: 'record.path,
-                    result: response.data._entities
-                });
-
-                foreach var removedRecord in result.removedRecords {
-                    self.toBeResolved.push({
-                        path: removedRecord.path,
-                        ids: [],
-                        fields: removedRecord.fields,
-                        typename: "Astronaut",
-                        'client: "astronauts"
-                    });
-                }
+                
 
             }
             else if 'record.'client == "astronauts" {
@@ -123,15 +107,15 @@ class Resolver {
         };
     }
 
-    public function pushToResolve(ResolveRecord 'record) {
-        self.toBeResolved.push('record);
+    public function pushToResolve(graphql:Field 'field) {
+        self.toBeResolved.push('field);
     }
 
     public function execute() returns ResolvedRecord[] {
         // iterate till the toBeResolved is empty.
 
         while self.toBeResolved.length() > 0 {
-            ResolveRecord 'record = self.toBeResolved.pop();
+            graphql:Field 'field = self.toBeResolved.pop();
             //TODO: resolve the reference.
 
         }
