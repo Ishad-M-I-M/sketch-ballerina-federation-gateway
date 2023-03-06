@@ -1,13 +1,25 @@
 import ballerina/graphql;
 
-public function buildQueryString(graphql:Field[] fields) returns string {
+
+isolated function getResolvableSubfields(graphql:Field 'field, string clientName, Resolver resolver) returns graphql:Field[]?{
+    //returns the resolvable subfields and push the unresolvable fields to the resolver.
+    graphql:Field[]? subfields = 'field.getSubfields();
+    if (subfields is ()){
+        return ();
+    }
+
+    
+} 
+
+public isolated function buildQueryString(graphql:Field[] fields, string clientName, Resolver resolver) returns string {
     string[] queryStrings = [];
 
-    foreach var [key, value] in fields.entries() {
-        if (value is ()) {
-            queryStrings.push(key);
+    foreach var 'field in fields {
+        graphql:Field[]? subFields = 'field.getSubfields();
+        if ( subFields is ()) {
+            queryStrings.push('field.getName());
         } else {
-            queryStrings.push(key + " {\n" + buildQueryString(value) + "\n}\n");
+            queryStrings.push('field.getName() + " {\n" + buildQueryString(subFields, clientName, resolver) + "\n}\n");
         }
     }
     return string:'join(" ", ...queryStrings);
@@ -21,18 +33,7 @@ public type queryResolveEntry record {
     string 'client;
 };
 
-public isolated function buildQueryPlan(graphql:Field[] 'field, string typename, string[] path) returns queryResolveEntry[]|error {
-    queryResolveEntry[] queryPlan = [];
-
-    foreach var [key, value] in 'field.entries() {
-
-    }
-
-    return error("Not implemented");
-
-}
-
-public function wrapWithEntityRepresentation(string typename, string[] ids, string propertyQuery) returns string {
+public isolated function wrapWithEntityRepresentation(string typename, string[] ids, string propertyQuery) returns string {
     string[] representations = [];
     foreach var id in ids {
         representations.push(string `{ __typename: "${typename}" id: "${id}"}`);
@@ -48,7 +49,7 @@ public function wrapWithEntityRepresentation(string typename, string[] ids, stri
     }`;
 }
 
-public function wrapwithQuery(string root, string propertyQuery, map<string>? args = ()) returns string {
+public isolated function wrapwithQuery(string root, string propertyQuery, map<string>? args = ()) returns string {
     if args is () {
         return string `${root}{
             ${propertyQuery}
