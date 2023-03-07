@@ -11,10 +11,10 @@ public type fieldRecord record {|
 public type queryPlanEntry record {|
     readonly string typename;
     string key;
-    table<fieldRecord> key(name) fields;
+    readonly & table<fieldRecord> key(name) fields;
 |};
 
-public table<queryPlanEntry> key(typename) queryPlan = table [
+public final readonly & table<queryPlanEntry> key(typename) queryPlan = table [
     {
         typename: "Astronaut",
         key: "id",

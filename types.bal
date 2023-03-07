@@ -53,6 +53,7 @@ public type ResolveRecord record {|
 |};
 
 public type ResolvedRecord record {|
+    string typename;
     string[] path;
-    Union|Union[]|error result;
+    Union[]|error result;
 |};

@@ -10,15 +10,22 @@ type ModifiedField record {|
     RemovedRecords[] removedRecords;
 |};
 
+type toBeResolveRecord record {|
+    string parentType;
+    graphql:Field 'field;
+|};
+
 public class Resolver {
 
-    private graphql:Field[] toBeResolved;
+    private toBeResolveRecord[] toBeResolved;
+    private string[][] ids;
     private ResolvedRecord[] results;
     private map<graphql:Client> clients;
 
     function init(map<graphql:Client> clients) {
         self.clients = clients;
         self.toBeResolved = [];
+        self.ids = [];
         self.results = [];
     }
 
@@ -31,7 +38,6 @@ public class Resolver {
 
             if 'record.'client == "missions" {
                 // Cannot resolve the `name` field of `crew`
-                
 
             }
             else if 'record.'client == "astronauts" {
@@ -107,16 +113,46 @@ public class Resolver {
         };
     }
 
-    public function pushToResolve(graphql:Field 'field) {
-        self.toBeResolved.push('field);
+    public isolated function pushToResolve(graphql:Field 'field, string parentType) {
+        self.toBeResolved.push({
+            parentType: parentType,
+            'field: 'field
+        });
     }
 
-    public function execute() returns ResolvedRecord[] {
+    public isolated function pushToIds(string[] ids) {
+        self.ids.push(ids);
+    }
+
+    public isolated function execute() returns ResolvedRecord[]|error {
         // iterate till the toBeResolved is empty.
 
         while self.toBeResolved.length() > 0 {
-            graphql:Field 'field = self.toBeResolved.pop();
-            //TODO: resolve the reference.
+            toBeResolveRecord 'record = self.toBeResolved.pop();
+            string[] ids = self.ids.pop();
+
+            string clientName = queryPlan.get('record.parentType).fields.get('record.'field.getName()).'client;
+
+            string propertyString = buildQueryString(['record.'field], 'record.parentType, clientName, self);
+
+            string queryString = wrapWithEntityRepresentation('record.parentType, ids, propertyString);
+
+            graphql:Client 'client = self.clients.get(clientName);
+
+            if 'record.parentType == "Astronaut" {
+                EntityAstronautResponse result = check 'client->execute(queryString);
+                self.results.push({
+                    typename: 'record.parentType,
+                    path: 'record.'field.getPath().'map(n => n.toString()),
+                    result: result.data._entities
+                });
+            }
+            else if 'record.parentType == "Mission" {
+                EntityMissionResponse result = check 'client->execute(queryString);
+            }
+            else {
+                return error("Unknown type");
+            }
 
         }
 
