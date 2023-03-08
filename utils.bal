@@ -135,6 +135,22 @@ public isolated function composeResults(Union|Union[] initialResult, ResolvedRec
             finalResult = check initialResultJson.cloneWithType();
         }
         else {
+            string[] updatePath = 'record.path.slice(2);
+            Union[] data = check 'record.result;
+            json[] initialResultJson = <json[]>finalResult.toJson();
+
+            foreach var item in data {
+                var newValue = <map<json>>item.toJson();
+                foreach var initial in initialResultJson {
+                    if initial is map<json> {
+                        if initial[queryPlan.get('record.typename).key] == newValue[queryPlan.get('record.typename).key] {
+                            _ = check updateJson(initial, updatePath, newValue[updatePath[updatePath.length() - 1]]);
+                        }
+                    }
+                }
+            }
+
+            finalResult = check initialResultJson.cloneWithType();
 
         }
     }

@@ -45,8 +45,34 @@ service on new graphql:Listener(9000) {
     }
 
     resource function get astronauts(graphql:Field 'field) returns Astronaut[]|error {
-        io:println('field.getType());
-        return error("Not implemented");
+        Resolver resolver = new Resolver(self.clients);
+
+        graphql:Client 'client = self.clients.get("astronauts");
+
+        graphql:Field[]? subfields = 'field.getSubfields();
+
+        if subfields is () {
+            return error("Invalid graphql document");
+        }
+
+        string queryString = wrapwithQuery("astronauts", buildQueryString(subfields, "Astronaut", "astronauts", resolver));
+
+        AstronautsResponse response = check 'client->execute(queryString);
+
+        Astronaut[] result = response.data.astronauts;
+
+        _ = resolver.pushToIds(from var astronaut in result
+            select astronaut.id.toString());
+
+        ResolvedRecord[] records = check resolver.execute();
+
+        var finalResult = check composeResults(result, records);
+
+        if finalResult is Union[] {
+            return finalResult.cloneWithType();
+        } else {
+            return error("Invalid results");
+        }
     }
 
     resource function get mission(graphql:Field 'field, int id) returns Mission|error {
