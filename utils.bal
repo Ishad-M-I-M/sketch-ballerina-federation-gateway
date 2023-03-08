@@ -111,14 +111,21 @@ public isolated function wrapwithQuery(string root, string propertyQuery, map<st
 # + results - The results obtained by the resolving by referance
 # + return - Composed result
 public isolated function composeResults(Union|Union[] initialResult, ResolvedRecord[] results) returns Union|Union[]|error {
+    ResolvedRecord[] resultsCopy = results.clone();
     Union|Union[] finalResult = initialResult.clone();
 
-    while results.length() > 0 {
-        ResolvedRecord 'record = results.pop();
+    while resultsCopy.length() > 0 {
+        ResolvedRecord 'record = resultsCopy.pop();
 
         if initialResult is Union {
             json initialResultJson = finalResult.toJson();
-            _ = check updateJson(initialResultJson, 'record.path.slice(1), check 'record.result);
+            string[] updatePath = 'record.path.slice(1);
+
+            Union[] data = check 'record.result;
+            var newValue = <map<json>>data[0].toJson();
+
+            _ = check updateJson(initialResultJson, updatePath, newValue[updatePath[updatePath.length() - 1]]);
+            finalResult = check initialResultJson.cloneWithType();
         }
         else {
 
