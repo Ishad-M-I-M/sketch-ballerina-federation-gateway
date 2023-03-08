@@ -87,8 +87,11 @@ public isolated function wrapWithEntityRepresentation(string typename, string[] 
 
 public isolated function wrapwithQuery(string root, string propertyQuery, map<string>? args = ()) returns string {
     if args is () {
-        return string `${root}{
-            ${propertyQuery}
+        return string `query
+            {   
+                ${root}{
+                ${propertyQuery}
+            }
         }`;
     }
     else {
