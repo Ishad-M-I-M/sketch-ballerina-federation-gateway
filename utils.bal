@@ -58,6 +58,10 @@ public isolated function buildQueryString(graphql:Field[] fields, string parentT
             }
         }
     }
+    if queryStrings.indexOf(queryPlan.get(parentType).key) is () {
+        queryStrings.push(queryPlan.get(parentType).key);
+    }
+
     return string:'join(" ", ...queryStrings);
 }
 
