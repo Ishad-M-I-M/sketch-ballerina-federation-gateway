@@ -21,7 +21,24 @@ service on new graphql:Listener(9000) {
     }
 
     resource function get astronaut(int id, graphql:Field 'field) returns Astronaut|error {
-        return error("Not implemented");
+        graphql:Client 'client = self.clients.get("astronauts");
+        QueryPropertyClassifier classifier = new ('field, "astronauts");
+
+        string propertyString = classifier.getPropertyString();
+        unResolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
+
+        string queryString = wrapwithQuery("astronaut", propertyString, {"id": id.toString()});
+        AstronautResponse response = check 'client->execute(queryString);
+
+        Astronaut result = response.data.astronaut;
+
+        if (propertiesNotResolved.length() > 0) {
+            Resolver resolver = new (self.clients, result, propertiesNotResolved, ["astronaut"]);
+            return resolver.resolve().ensureType();
+        }
+        else {
+            return result;
+        }
     }
 
     resource function get astronauts(graphql:Field 'field) returns Astronaut[]|error {
@@ -48,11 +65,45 @@ service on new graphql:Listener(9000) {
     }
 
     resource function get mission(int id, graphql:Field 'field) returns Mission|error {
-        return error("Not implemented");
+        graphql:Client 'client = self.clients.get("missions");
+        QueryPropertyClassifier classifier = new ('field, "missions");
+
+        string propertyString = classifier.getPropertyString();
+        unResolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
+
+        string queryString = wrapwithQuery("mission", propertyString, {"id": id.toString()});
+        MissionResponse response = check 'client->execute(queryString);
+
+        Mission result = response.data.mission;
+
+        if (propertiesNotResolved.length() > 0) {
+            Resolver resolver = new (self.clients, result, propertiesNotResolved, ["mission"]);
+            return resolver.resolve().ensureType();
+        }
+        else {
+            return result;
+        }
     }
 
     resource function get missions(graphql:Field 'field) returns Mission[]|error {
-        return error("Not implemented");
+        graphql:Client 'client = self.clients.get("missions");
+        QueryPropertyClassifier classifier = new ('field, "missions");
+
+        string propertyString = classifier.getPropertyString();
+        unResolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
+
+        string queryString = wrapwithQuery("missions", propertyString);
+        MissionsResponse response = check 'client->execute(queryString);
+
+        Mission[] result = response.data.missions;
+
+        if (propertiesNotResolved.length() > 0) {
+            Resolver resolver = new (self.clients, result, propertiesNotResolved, ["missions"]);
+            return resolver.resolve().ensureType();
+        }
+        else {
+            return result;
+        }
     }
 
 }

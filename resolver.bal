@@ -12,7 +12,7 @@ public class Resolver {
 
     private string[] currentPath;
 
-    public function init(map<graphql:Client> clients, Union|Union[] result, unResolvableField[] unResolvableFields, string[] currentPath) {
+    public isolated function init(map<graphql:Client> clients, Union|Union[] result, unResolvableField[] unResolvableFields, string[] currentPath) {
         self.clients = clients;
         self.result = result;
         self.toBeResolved = unResolvableFields;
@@ -21,14 +21,74 @@ public class Resolver {
 
     public isolated function resolve() returns Union|Union[]|error {
         // Resolve the fields that are not resolvable.
+
         foreach var 'record in self.toBeResolved {
-            // field resolving client.
-            string clientName = queryPlan.get('record.parent).fields.get('record.'field.getName()).'client;
 
-            graphql:Client 'client = self.clients.get(clientName);
+            // Check whether the field need to be resolved is nested by zero or one level.
+            // These can be resolved and composed directly to the result.
+            if 'record.'field.getPath().slice(self.currentPath.length()).filter(e => e == "@").length() <= 1 {
 
-            if 'record.'field.getUnwrappedType().kind == "SCALAR" {
-                string queryString = wrapWithEntityRepresentation('record.parent, [], 'record.'field.getName());
+                // field resolving client.
+                string clientName = queryPlan.get('record.parent).fields.get('record.'field.getName()).'client;
+
+                graphql:Client 'client = self.clients.get(clientName);
+
+                if 'record.'field.getUnwrappedType().kind == "SCALAR" {
+                    string[] path = self.getEffectivePath('record.'field);
+
+                    int? index = path.indexOf("@");
+                    if !(index is ()) {
+                        path = path.slice(0, index);
+                    }
+                    string[] ids = check self.getIdsInPath(self.result, path, 'record.parent);
+
+                    string queryString = wrapWithEntityRepresentation('record.parent, ids, 'record.'field.getName());
+
+                    json result = check 'client->execute(queryString);
+
+                    _ = check self.compose(self.result, result, self.getEffectivePath('record.'field));
+                }
+                else {
+                    QueryPropertyClassifier classifier = new ('record.'field, queryPlan.get('record.parent).fields.get('record.'field.getName()).'type);
+
+                    string propertyString = classifier.getPropertyString();
+
+                    EntityResponse response = check 'client->execute(propertyString);
+
+                    _ = check self.compose(self.result, response.data._entities, self.getEffectivePath('record.'field));
+
+                    unResolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
+
+                    if (propertiesNotResolved.length() > 0) {
+                        Resolver resolver = new (self.clients, self.result, propertiesNotResolved, <string[]>'record.'field.getPath());
+                        self.result = check resolver.resolve().ensureType();
+                    }
+
+                }
+
+            }
+            else {
+                // Cannot resolve directly and compose.
+                // Iterated through the self.result and resolve the fields util it falls for base condition.
+                Union[] results = [];
+
+                string[] path = self.getEffectivePath('record.'field);
+                json pointer = self.result;
+
+                string element = path.shift();
+                while element != "@" {
+                    pointer = (<map<json>>pointer)[element];
+                    element = path.shift();
+                }
+
+                foreach var item in <Union[]>pointer {
+                    Resolver resolver = new (self.clients, item, ['record], <string[]>'record.'field.getPath());
+                    Union composedResult = check resolver.resolve().ensureType();
+                    results.push(composedResult);
+                }
+
+                _ = check self.compose(self.result, results, self.getEffectivePath('record.'field));
+
             }
 
         }
@@ -47,12 +107,13 @@ public class Resolver {
         while (pathCopy.length() > 0) {
             if element == "@" {
                 if resultToCompose is json[] && pointer is json[] {
-                    foreach var i in 0 ... (resultToCompose.length() - 1) {
+                    foreach var i in 0 ..< resultToCompose.length() {
                         _ = check self.compose(pointer[i], resultToCompose[i], pathCopy);
                     }
                     return;
                 }
                 else {
+                    // Ideally should not be thrown
                     return error("Error: Cannot compose into the result.");
                 }
             }
@@ -66,14 +127,47 @@ public class Resolver {
             pointer[element] = resultToCompose[element];
         }
         else {
+            // Ideally should not be thrown
             return error("Error: Cannot compose into the result.");
         }
     }
 
     // Get the ids of the entities in the path from the current result.
-    private isolated function getIdsInPath(string[] path) returns string[] {
+    // The path should contain upto a '@' element.
+    // Don't support '@' elements in the path.
+    private isolated function getIdsInPath(json pointer, string[] path, string parentType) returns string[]|error {
 
-        return [];
+        if path.length() == 0 {
+            string key = queryPlan.get(parentType).key;
+            string[] ids = [];
+            if pointer is Union {
+                ids.push((<map<json>>pointer)[key].toString());
+            }
+            else if pointer is Union[] {
+                foreach var element in pointer {
+                    ids.push((<map<json>>element)[key].toString());
+                }
+            }
+            else {
+                return error("Error: Cannot get ids from the result.");
+            }
+
+            return ids;
+        }
+
+        string element = path.shift();
+        json newPointer = (<map<json>>pointer)[element];
+        string fieldType = queryPlan.get(parentType).fields.get(element).'type;
+
+        return self.getIdsInPath(newPointer, path, fieldType);
+
+    }
+
+    private isolated function getEffectivePath(graphql:Field 'field) returns string[] {
+        return 'field.getPath().slice(self.currentPath.length()).'map(
+                        isolated function(string|int element) returns string {
+            return element is int ? "@" : element;
+        });
     }
 
 }
