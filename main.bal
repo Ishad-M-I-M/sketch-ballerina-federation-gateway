@@ -1,9 +1,15 @@
-import ballerina/io;
 import ballerina/graphql;
+import ballerina/io;
 
+@graphql:ServiceConfig {
+    graphiql: {
+        enabled: true,
+        path: "/testing"
+    }
+}
 service on new graphql:Listener(9000) {
 
-    map<graphql:Client> clients = {};
+    private map<graphql:Client> clients;
 
     function init() returns error? {
         self.clients = {
@@ -13,88 +19,72 @@ service on new graphql:Listener(9000) {
     }
 
     resource function get astronaut(graphql:Field 'field, int id) returns Astronaut|error {
+        Resolver resolver = new Resolver(self.clients);
 
-        //adding key field even not requested.
-        map<graphql:fieldDocument> fields = 'field.getQueryDocument();
-        fields["id"] = ();
+        graphql:Client 'client = self.clients.get("astronauts");
 
-        return new Astronaut(fields, self.clients, {id: id.toString()});
+        graphql:Field[]? subfields = 'field.getSubfields();
+
+        if subfields is () {
+            return error("Invalid graphql document");
+        }
+
+        string queryString = wrapwithQuery("astronaut", buildQueryString(subfields, "Astronaut", "astronauts", resolver), {"id": id.toString()});
+
+        AstronautResponse response = check 'client->execute(queryString);
+
+        Astronaut result = response.data.astronaut;
+
+        _ = resolver.pushToIds([id.toString()]);
+
+        ResolvedRecord[] records = check resolver.execute();
+
+        var finalResult = check composeResults(result, records);
+
+        return <Astronaut>finalResult;
     }
 
     resource function get astronauts(graphql:Field 'field) returns Astronaut[]|error {
+        Resolver resolver = new Resolver(self.clients);
 
-        //adding key field even not requested.
-        map<graphql:fieldDocument> fields = 'field.getQueryDocument();
-        fields["id"] = ();
+        graphql:Client 'client = self.clients.get("astronauts");
 
-        io:println("\n\n[DEBUG - MAIN] requested fields:\n", fields);
+        graphql:Field[]? subfields = 'field.getSubfields();
 
-        if (self.clients["astronauts"] == ()) {
-            return error("Client not found");
+        if subfields is () {
+            return error("Invalid graphql document");
         }
-        else {
-            graphql:Client 'client = <graphql:Client>self.clients["astronauts"];
 
-            string query = string `query{
-                astronauts {
-                    ${buildQueryString(filterFields(fields.keys(), fields))}
-                }
-            }`;
+        string queryString = wrapwithQuery("astronauts", buildQueryString(subfields, "Astronaut", "astronauts", resolver));
 
-            io:println("\n\n[DEBUG - MAIN] query to fetch astronauts:\n", query);
+        AstronautsResponse response = check 'client->execute(queryString);
 
-            AstronautsRecordResponse result = check 'client->execute(query);
-            return result.data.astronauts.map(function(AstronautRecord astronaut) returns Astronaut {
-                io:println("\n\n[DEBUG - MAIN] ", astronaut);
-                Astronaut|error _astronaut = new (fields, self.clients, astronaut);
-                if (_astronaut is Astronaut) {
-                    return _astronaut;
-                }
-                else {
-                    panic error("Error while creating the astronaut");
-                }
-            });
+        Astronaut[] result = response.data.astronauts;
+
+        _ = resolver.pushToIds(from var astronaut in result
+            select astronaut.id.toString());
+
+        ResolvedRecord[] records = check resolver.execute();
+
+        var finalResult = check composeResults(result, records);
+
+        if finalResult is Union[] {
+            return finalResult.cloneWithType();
+        } else {
+            return error("Invalid results");
         }
     }
 
     resource function get mission(graphql:Field 'field, int id) returns Mission|error {
-
-        //adding key field even not requested.
-        map<graphql:fieldDocument> fields = 'field.getQueryDocument();
-        fields["id"] = ();
-
-        return new Mission(fields, self.clients, {id: id.toString()});
+        io:println('field.getType());
+        return error("Not implemented");
     }
 
     resource function get missions(graphql:Field 'field) returns Mission[]|error {
-
-        //adding key field even not requested.
-        map<graphql:fieldDocument> fields = 'field.getQueryDocument();
-        fields["id"] = ();
-
-        if (self.clients["missions"] == ()) {
-            return error("Client not found");
-        }
-        else {
-            graphql:Client 'client = <graphql:Client>self.clients["missions"];
-
-            string query = string `query{
-                missions {
-                    ${buildQueryString(fields)}
-                }
-            }`;
-
-            MissionsRecordResponse result = check 'client->execute(query);
-            return result.data.missions.map(function(MissionRecord mission) returns Mission {
-                Mission|error _mission = new (fields, self.clients, mission);
-                if (_mission is Mission) {
-                    return _mission;
-                }
-                else {
-                    panic error("Error while creating the mission");
-                }
-            });
-        }
+        // "id", "designation", "startDate", "endDate", "crew" - solved directly from the `missions` client.
+        // "crew"."name" - resolved from the `astronauts` client using _entities query.
+        io:println('field.getType());
+        return error("Not implemented");
     }
 
 }
