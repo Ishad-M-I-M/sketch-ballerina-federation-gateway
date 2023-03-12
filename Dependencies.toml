@@ -123,9 +123,6 @@ dependencies = [
 	{org = "ballerina", name = "jballerina.java"},
 	{org = "ballerina", name = "lang.value"}
 ]
-modules = [
-	{org = "ballerina", packageName = "io", moduleName = "io"}
-]
 
 [[package]]
 org = "ballerina"
@@ -289,6 +286,18 @@ dependencies = [
 
 [[package]]
 org = "ballerina"
+name = "test"
+version = "0.0.0"
+scope = "testOnly"
+dependencies = [
+	{org = "ballerina", name = "jballerina.java"}
+]
+modules = [
+	{org = "ballerina", packageName = "test", moduleName = "test"}
+]
+
+[[package]]
+org = "ballerina"
 name = "time"
 version = "2.2.3"
 dependencies = [
@@ -338,14 +347,14 @@ modules = [
 
 [[package]]
 org = "mohamed_ishad"
-name = "initial_impl"
+name = "sketch_gateway_example"
 version = "0.1.0"
 dependencies = [
 	{org = "ballerina", name = "graphql"},
-	{org = "ballerina", name = "io"},
+	{org = "ballerina", name = "test"},
 	{org = "ballerinai", name = "observe"}
 ]
 modules = [
-	{org = "mohamed_ishad", packageName = "initial_impl", moduleName = "initial_impl"}
+	{org = "mohamed_ishad", packageName = "sketch_gateway_example", moduleName = "sketch_gateway_example"}
 ]
 

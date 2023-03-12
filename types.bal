@@ -1,4 +1,3 @@
-import ballerina/graphql;
 
 type Mission record {|
     string id?;
@@ -35,25 +34,6 @@ type MissionsResponse record {
     record {|Mission[] missions;|} data;
 };
 
-type EntityAstronautResponse record {
-    record {|Astronaut[] _entities;|} data;
+type EntityResponse record {
+    record {|json[] _entities;|} data;
 };
-
-type EntityMissionResponse record {
-    record {|Mission[] _entities;|} data;
-};
-
-// Types relate to the resolver
-public type ResolveRecord record {|
-    string[] path;
-    string[][] ids;
-    graphql:Field[] fields;
-    string typename;
-    string 'client;
-|};
-
-public type ResolvedRecord record {|
-    string typename;
-    string[] path;
-    Union[]|error result;
-|};
