@@ -47,16 +47,16 @@ public class Resolver {
 
                     string queryString = wrapWithEntityRepresentation('record.parent, key, ids, 'record.'field.getName());
 
-                    json result = check 'client->execute(queryString);
+                    EntityResponse result = check 'client->execute(queryString);
 
-                    _ = check self.compose(self.result, result, self.getEffectivePath('record.'field));
+                    _ = check self.compose(self.result, result.data._entities, self.getEffectivePath('record.'field));
                 }
                 else {
                     QueryPropertyClassifier classifier = new ('record.'field, clientName);
 
                     string propertyString = classifier.getPropertyStringWithRoot();
 
-                    string queryString = wrapWithEntityRepresentation(<string>'record.parent, key, ids, propertyString);
+                    string queryString = wrapWithEntityRepresentation('record.parent, key, ids, propertyString);
 
                     EntityResponse response = check 'client->execute(queryString);
 
@@ -65,7 +65,8 @@ public class Resolver {
                     unResolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
 
                     if (propertiesNotResolved.length() > 0) {
-                        Resolver resolver = new (self.clients, self.result, propertiesNotResolved, <string[]>'record.'field.getPath());
+                        Resolver resolver = new (self.clients, self.result, propertiesNotResolved, convertPathToString('record.'field.getPath()));
+                        var result = check resolver.resolve();
                         self.result = check resolver.resolve().ensureType();
                     }
 
@@ -87,7 +88,7 @@ public class Resolver {
                 }
 
                 foreach var item in <Union[]>pointer {
-                    Resolver resolver = new (self.clients, item, ['record], <string[]>'record.'field.getPath());
+                    Resolver resolver = new (self.clients, item, ['record], convertPathToString('record.'field.getPath()));
                     Union composedResult = check resolver.resolve().ensureType();
                     results.push(composedResult);
                 }
@@ -129,7 +130,7 @@ public class Resolver {
         }
 
         if pointer is map<json> && resultToCompose is map<json> {
-            pointer[element] = resultToCompose[element];
+            compose(pointer, resultToCompose, element);
         }
         else {
             // Ideally should not be thrown

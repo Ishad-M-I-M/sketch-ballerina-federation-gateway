@@ -1,3 +1,5 @@
+import ballerina/jballerina.java;
+
 // Prepare query string to resolve by reference.
 isolated function wrapWithEntityRepresentation(string typename, string key, string[] ids, string propertyQuery) returns string {
     string[] representations = [];
@@ -39,3 +41,13 @@ isolated function wrapwithQuery(string root, string propertyQuery, map<string>? 
         }`;
     }
 }
+
+isolated function convertPathToString((string|int)[] path) returns string[] {
+    return path.'map(isolated function(string|int element) returns string {
+        return element is int ? "@" : element;
+    });
+}
+
+isolated function compose(map<json> initialResult, map<json> resultToCompose, string element) = @java:Method {
+    'class: "io.ballerina.stdlib.NativeImpl"
+} external;

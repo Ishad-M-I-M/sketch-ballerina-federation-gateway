@@ -11,7 +11,7 @@ type Mission record {|
 type Astronaut record {|
     string id?;
     string name?;
-    Mission[] missions?;
+    Mission[] missions = [];
 |};
 
 type Union Astronaut|Mission;
