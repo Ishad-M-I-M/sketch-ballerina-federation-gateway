@@ -1,3 +1,4 @@
+// Need to generate by code modifier plugin
 
 type Mission record {|
     string id?;

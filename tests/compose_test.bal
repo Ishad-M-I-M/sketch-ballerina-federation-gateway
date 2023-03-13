@@ -83,7 +83,7 @@ function testCompose2() {
         }
     ];
 
-    Astronaut[] test2a = [
+    json[] test2a = [
         {
             id: "1",
             missions: [
@@ -318,22 +318,22 @@ function testCompose4() {
         [
             [
                 {
-                    id: "4",
-                    name: "John Doe4"
+                    id: "6",
+                    name: "John Doe6"
                 },
                 {
-                    id: "5",
-                    name: "Jane Doe5"
+                    id: "7",
+                    name: "Jane Doe7"
                 }
             ],
             [
                 {
-                    id: "4",
-                    name: "John Doe4"
+                    id: "8",
+                    name: "John Doe8"
                 },
                 {
-                    id: "5",
-                    name: "Jane Doe5"
+                    id: "9",
+                    name: "Jane Doe9"
                 }
             ]
         ]
@@ -351,23 +351,22 @@ function testCompose4() {
                 },
                 {
                     "id": "2",
-                    "crew": [{"id": "4", "name": "John Doe4"}, {"id": "5"}],
+                    "crew": [{"id": "4", "name": "John Doe4"}, {"id": "5", "name": "John Doe5"}],
                     "designation": "Apollo 12"
                 }
             ]
         },
         {
             "id": "2",
-            "name": "Jane Doe2",
             "missions": [
                 {
                     "id": "3",
-                    "crew": [{"id": "6"}, {"id": "7"}],
+                    "crew": [{"id": "6", "name": "John Doe6"}, {"id": "7", "name": "John Doe7"}],
                     "designation": "Apollo 13"
                 },
                 {
                     "id": "4",
-                    "crew": [{"id": "8"}, {"id": "9"}],
+                    "crew": [{"id": "8", "name": "John Doe8"}, {"id": "9", "name": "John Doe9"}],
                     "designation": "Apollo 14"
                 }
             ]

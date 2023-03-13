@@ -240,13 +240,14 @@ dependencies = [
 [[package]]
 org = "ballerina"
 name = "oauth2"
-version = "2.6.0"
+version = "2.6.1"
 dependencies = [
 	{org = "ballerina", name = "cache"},
 	{org = "ballerina", name = "crypto"},
 	{org = "ballerina", name = "jballerina.java"},
 	{org = "ballerina", name = "log"},
-	{org = "ballerina", name = "time"}
+	{org = "ballerina", name = "time"},
+	{org = "ballerina", name = "url"}
 ]
 
 [[package]]
@@ -347,7 +348,7 @@ modules = [
 
 [[package]]
 org = "mohamed_ishad"
-name = "sketch_gateway_example"
+name = "initial_impl"
 version = "0.1.0"
 dependencies = [
 	{org = "ballerina", name = "graphql"},
@@ -355,6 +356,6 @@ dependencies = [
 	{org = "ballerinai", name = "observe"}
 ]
 modules = [
-	{org = "mohamed_ishad", packageName = "sketch_gateway_example", moduleName = "sketch_gateway_example"}
+	{org = "mohamed_ishad", packageName = "initial_impl", moduleName = "initial_impl"}
 ]
 

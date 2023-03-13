@@ -33,27 +33,32 @@ public class Resolver {
 
                 graphql:Client 'client = self.clients.get(clientName);
 
+                string[] path = self.getEffectivePath('record.'field);
+
+                int? index = path.indexOf("@");
+                if !(index is ()) {
+                    path = path.slice(0, index);
+                }
+
+                string key = queryPlan.get('record.parent).key;
+                string[] ids = check self.getIdsInPath(self.result, path, 'record.parent);
+
                 if 'record.'field.getUnwrappedType().kind == "SCALAR" {
-                    string[] path = self.getEffectivePath('record.'field);
 
-                    int? index = path.indexOf("@");
-                    if !(index is ()) {
-                        path = path.slice(0, index);
-                    }
-                    string[] ids = check self.getIdsInPath(self.result, path, 'record.parent);
-
-                    string queryString = wrapWithEntityRepresentation('record.parent, ids, 'record.'field.getName());
+                    string queryString = wrapWithEntityRepresentation('record.parent, key, ids, 'record.'field.getName());
 
                     json result = check 'client->execute(queryString);
 
                     _ = check self.compose(self.result, result, self.getEffectivePath('record.'field));
                 }
                 else {
-                    QueryPropertyClassifier classifier = new ('record.'field, queryPlan.get('record.parent).fields.get('record.'field.getName()).'type);
+                    QueryPropertyClassifier classifier = new ('record.'field, clientName);
 
-                    string propertyString = classifier.getPropertyString();
+                    string propertyString = classifier.getPropertyStringWithRoot();
 
-                    EntityResponse response = check 'client->execute(propertyString);
+                    string queryString = wrapWithEntityRepresentation(<string>'record.parent, key, ids, propertyString);
+
+                    EntityResponse response = check 'client->execute(queryString);
 
                     _ = check self.compose(self.result, response.data._entities, self.getEffectivePath('record.'field));
 

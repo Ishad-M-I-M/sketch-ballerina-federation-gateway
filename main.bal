@@ -1,3 +1,5 @@
+// Need to generate by code modifier plugin
+
 import ballerina/graphql;
 
 //Entry point to gateway. Will be generated
@@ -20,7 +22,7 @@ service on new graphql:Listener(9000) {
         };
     }
 
-    resource function get astronaut(int id, graphql:Field 'field) returns Astronaut|error {
+    isolated resource function get astronaut(int id, graphql:Field 'field) returns Astronaut|error {
         graphql:Client 'client = self.clients.get("astronauts");
         QueryPropertyClassifier classifier = new ('field, "astronauts");
 
@@ -41,7 +43,7 @@ service on new graphql:Listener(9000) {
         }
     }
 
-    resource function get astronauts(graphql:Field 'field) returns Astronaut[]|error {
+    isolated resource function get astronauts(graphql:Field 'field) returns Astronaut[]|error {
 
         graphql:Client 'client = self.clients.get("astronauts");
         QueryPropertyClassifier classifier = new ('field, "astronauts");
@@ -64,7 +66,7 @@ service on new graphql:Listener(9000) {
 
     }
 
-    resource function get mission(int id, graphql:Field 'field) returns Mission|error {
+    isolated resource function get mission(int id, graphql:Field 'field) returns Mission|error {
         graphql:Client 'client = self.clients.get("missions");
         QueryPropertyClassifier classifier = new ('field, "missions");
 
@@ -85,7 +87,7 @@ service on new graphql:Listener(9000) {
         }
     }
 
-    resource function get missions(graphql:Field 'field) returns Mission[]|error {
+    isolated resource function get missions(graphql:Field 'field) returns Mission[]|error {
         graphql:Client 'client = self.clients.get("missions");
         QueryPropertyClassifier classifier = new ('field, "missions");
 

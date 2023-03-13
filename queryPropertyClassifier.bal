@@ -5,7 +5,8 @@ class QueryPropertyClassifier {
     // client for which the field peroperties are classified.
     private string clientName;
 
-    // field name which the subfields get classified.
+    // field properties
+    private string fieldTypeName;
     private string fieldName;
 
     // resolvable fields are pushed to this.
@@ -23,24 +24,25 @@ class QueryPropertyClassifier {
 
         graphql:Field[]? subfields = 'field.getSubfields();
 
-        string? fieldName = 'field.getUnwrappedType().name;
+        string? fieldTypeName = 'field.getUnwrappedType().name;
 
         // Panic if field object has no subfields or the unwrapped type has no name.
-        if subfields is () || fieldName is () {
+        if subfields is () || fieldTypeName is () {
             panic error("Error: Invalid field object");
         }
 
-        self.fieldName = fieldName;
+        self.fieldTypeName = fieldTypeName;
+        self.fieldName = 'field.getName();
 
         // iterate through all the 
         foreach var subfield in subfields {
-            if self.isResolvable(subfield, fieldName, clientName) {
+            if self.isResolvable(subfield, fieldTypeName, clientName) {
                 self.resolvableFields.push(subfield);
             }
             else {
                 self.unresolvableFields.push({
                     'field: subfield,
-                    parent: fieldName
+                    parent: fieldTypeName
                 });
             }
 
@@ -70,12 +72,16 @@ class QueryPropertyClassifier {
         }
 
         // Push the key property even it is not requested.
-        string key = queryPlan.get(self.fieldName).key;
+        string key = queryPlan.get(self.fieldTypeName).key;
         if properties.indexOf(key) is () {
             properties.push(key);
         }
 
         return string:'join(" ", ...properties);
+    }
+
+    public isolated function getPropertyStringWithRoot() returns string {
+        return string `${self.fieldName} { ${self.getPropertyString()} }`;
     }
 
     public isolated function getResolvableFields() returns graphql:Field[] {
@@ -89,7 +95,7 @@ class QueryPropertyClassifier {
     private isolated function isResolvable(graphql:Field 'field, string parentType, string clientName) returns boolean {
         // check wether the field is the key. Because key SHOULD be resolvable from any client.
         // OR the client name for resolving the field is equal to the given clientName.
-        if 'field.getUnwrappedType().name == queryPlan.get(parentType).key ||
+        if 'field.getName() == queryPlan.get(parentType).key ||
             queryPlan.get(parentType).fields.get('field.getName()).'client == clientName {
             return true;
         }

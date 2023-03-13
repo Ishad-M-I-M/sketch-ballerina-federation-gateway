@@ -1,14 +1,15 @@
 // Prepare query string to resolve by reference.
-isolated function wrapWithEntityRepresentation(string typename, string[] ids, string propertyQuery) returns string {
+isolated function wrapWithEntityRepresentation(string typename, string key, string[] ids, string propertyQuery) returns string {
     string[] representations = [];
     foreach var id in ids {
-        representations.push(string `{ __typename: "${typename}" id: "${id}"}`);
+        representations.push(string `{ __typename: "${typename}" ${key}: "${id}"}`);
     }
     return string `query{
         _entities(
             representations: [${string:'join(", ", ...representations)}]
         ) {
             ... on ${typename} {
+                ${key}
                 ${propertyQuery}
             }
         }
