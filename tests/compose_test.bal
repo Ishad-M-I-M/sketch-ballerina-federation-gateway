@@ -300,7 +300,7 @@ function testCompose4() {
                 },
                 {
                     id: "2",
-                    name: "Jane Doe2"
+                    name: "John Doe2"
                 }
             ],
             [
@@ -310,7 +310,7 @@ function testCompose4() {
                 },
                 {
                     id: "5",
-                    name: "Jane Doe5"
+                    name: "John Doe5"
                 }
             ]
         ],
@@ -323,7 +323,7 @@ function testCompose4() {
                 },
                 {
                     id: "7",
-                    name: "Jane Doe7"
+                    name: "John Doe7"
                 }
             ],
             [
@@ -333,7 +333,7 @@ function testCompose4() {
                 },
                 {
                     id: "9",
-                    name: "Jane Doe9"
+                    name: "John Doe9"
                 }
             ]
         ]
