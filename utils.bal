@@ -42,7 +42,7 @@ isolated function wrapwithQuery(string root, string propertyQuery, map<string>? 
     }
 }
 
-isolated function convertPathToString((string|int)[] path) returns string[] {
+isolated function convertPathToStringArray((string|int)[] path) returns string[] {
     return path.'map(isolated function(string|int element) returns string {
         return element is int ? "@" : element;
     });

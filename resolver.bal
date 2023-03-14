@@ -8,11 +8,11 @@ public class Resolver {
     private unResolvableField[] toBeResolved;
 
     // The final result of the resolver. Created an composed while resolving by `resolve()`.
-    private Union|Union[] result;
+    private json result;
 
     private string[] currentPath;
 
-    public isolated function init(map<graphql:Client> clients, Union|Union[] result, unResolvableField[] unResolvableFields, string[] currentPath) {
+    public isolated function init(map<graphql:Client> clients, json result, unResolvableField[] unResolvableFields, string[] currentPath) {
         self.clients = clients;
         self.result = result;
         self.toBeResolved = unResolvableFields;
@@ -65,8 +65,7 @@ public class Resolver {
                     unResolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
 
                     if (propertiesNotResolved.length() > 0) {
-                        Resolver resolver = new (self.clients, self.result, propertiesNotResolved, convertPathToString('record.'field.getPath()));
-                        var result = check resolver.resolve();
+                        Resolver resolver = new (self.clients, self.result, propertiesNotResolved, self.currentPath);
                         self.result = check resolver.resolve().ensureType();
                     }
 
@@ -76,30 +75,34 @@ public class Resolver {
             else {
                 // Cannot resolve directly and compose.
                 // Iterated through the self.result and resolve the fields util it falls for base condition.
-                Union[] results = [];
+                json[] results = [];
 
                 string[] path = self.getEffectivePath('record.'field);
+                string[] pathToCompose = self.currentPath.clone();
                 json pointer = self.result;
 
                 string element = path.shift();
+                pathToCompose.push(element);
+
                 while element != "@" {
                     pointer = (<map<json>>pointer)[element];
                     element = path.shift();
+                    pathToCompose.push(element);
                 }
 
-                foreach var item in <Union[]>pointer {
-                    Resolver resolver = new (self.clients, item, ['record], convertPathToString('record.'field.getPath()));
-                    Union composedResult = check resolver.resolve().ensureType();
+                foreach var item in <json[]>pointer {
+                    Resolver resolver = new (self.clients, item, ['record], pathToCompose);
+                    json composedResult = check resolver.resolve();
                     results.push(composedResult);
                 }
 
-                _ = check self.compose(self.result, results, self.getEffectivePath('record.'field));
+                _ = check self.compose(self.result, results, pathToCompose);
 
             }
 
         }
 
-        return self.result;
+        return check self.result.ensureType();
     }
 
     // helper functions.
