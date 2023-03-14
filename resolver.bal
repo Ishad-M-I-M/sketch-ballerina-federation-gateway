@@ -43,6 +43,9 @@ public class Resolver {
                 if !(index is ()) {
                     path = path.slice(0, index);
                 }
+                else {
+                    path = path.slice(0, path.length() - 1);
+                }
 
                 string key = queryPlan.get('record.parent).key;
                 string[] ids = check self.getIdsInPath(self.result, path, self.resultType);
@@ -159,8 +162,18 @@ public class Resolver {
             element = pathCopy.shift();
         }
 
-        if pointer is map<json> && resultToCompose is map<json> {
-            compose(pointer, resultToCompose, element);
+        if pointer is map<json> {
+            if resultToCompose is map<json> {
+                compose(pointer, resultToCompose, element);
+            }
+            else if resultToCompose is map<json>[] {
+                compose(pointer, resultToCompose[0], element);
+            }
+            else {
+                // Ideally should not be thrown
+                return error("Error: Cannot compose into the result.");
+            }
+
         }
         else {
             // Ideally should not be thrown
