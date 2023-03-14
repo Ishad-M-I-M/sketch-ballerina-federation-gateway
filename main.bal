@@ -1,14 +1,18 @@
+// Need to generate by code modifier plugin
+
 import ballerina/graphql;
-import ballerina/io;
+
+//Entry point to gateway. Will be generated
 
 @graphql:ServiceConfig {
     graphiql: {
         enabled: true,
-        path: "/testing"
+        path: "/graphiql"
     }
 }
 service on new graphql:Listener(9000) {
 
+    // Map to keep the client objects. The client objects will be created once.
     private map<graphql:Client> clients;
 
     function init() returns error? {
@@ -18,73 +22,90 @@ service on new graphql:Listener(9000) {
         };
     }
 
-    resource function get astronaut(graphql:Field 'field, int id) returns Astronaut|error {
-        Resolver resolver = new Resolver(self.clients);
-
+    isolated resource function get astronaut(int id, graphql:Field 'field) returns Astronaut|error {
         graphql:Client 'client = self.clients.get("astronauts");
+        QueryPropertyClassifier classifier = new ('field, "astronauts");
 
-        graphql:Field[]? subfields = 'field.getSubfields();
+        string propertyString = classifier.getPropertyString();
+        unResolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
 
-        if subfields is () {
-            return error("Invalid graphql document");
-        }
-
-        string queryString = wrapwithQuery("astronaut", buildQueryString(subfields, "Astronaut", "astronauts", resolver), {"id": id.toString()});
-
+        string queryString = wrapwithQuery("astronaut", propertyString, {"id": id.toString()});
         AstronautResponse response = check 'client->execute(queryString);
 
         Astronaut result = response.data.astronaut;
 
-        _ = resolver.pushToIds([id.toString()]);
-
-        ResolvedRecord[] records = check resolver.execute();
-
-        var finalResult = check composeResults(result, records);
-
-        return <Astronaut>finalResult;
+        if (propertiesNotResolved.length() > 0) {
+            Resolver resolver = new (self.clients, result, "Astronaut", propertiesNotResolved, ["astronaut"]);
+            return resolver.resolve().ensureType();
+        }
+        else {
+            return result;
+        }
     }
 
-    resource function get astronauts(graphql:Field 'field) returns Astronaut[]|error {
-        Resolver resolver = new Resolver(self.clients);
+    isolated resource function get astronauts(graphql:Field 'field) returns Astronaut[]|error {
 
         graphql:Client 'client = self.clients.get("astronauts");
+        QueryPropertyClassifier classifier = new ('field, "astronauts");
 
-        graphql:Field[]? subfields = 'field.getSubfields();
+        string propertyString = classifier.getPropertyString();
+        unResolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
 
-        if subfields is () {
-            return error("Invalid graphql document");
-        }
-
-        string queryString = wrapwithQuery("astronauts", buildQueryString(subfields, "Astronaut", "astronauts", resolver));
-
+        string queryString = wrapwithQuery("astronauts", propertyString);
         AstronautsResponse response = check 'client->execute(queryString);
 
         Astronaut[] result = response.data.astronauts;
 
-        _ = resolver.pushToIds(from var astronaut in result
-            select astronaut.id.toString());
+        if (propertiesNotResolved.length() > 0) {
+            Resolver resolver = new (self.clients, result, "Astronaut", propertiesNotResolved, ["astronauts"]);
+            return resolver.resolve().ensureType();
+        }
+        else {
+            return result;
+        }
 
-        ResolvedRecord[] records = check resolver.execute();
+    }
 
-        var finalResult = check composeResults(result, records);
+    isolated resource function get mission(int id, graphql:Field 'field) returns Mission|error {
+        graphql:Client 'client = self.clients.get("missions");
+        QueryPropertyClassifier classifier = new ('field, "missions");
 
-        if finalResult is Union[] {
-            return finalResult.cloneWithType();
-        } else {
-            return error("Invalid results");
+        string propertyString = classifier.getPropertyString();
+        unResolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
+
+        string queryString = wrapwithQuery("mission", propertyString, {"id": id.toString()});
+        MissionResponse response = check 'client->execute(queryString);
+
+        Mission result = response.data.mission;
+
+        if (propertiesNotResolved.length() > 0) {
+            Resolver resolver = new (self.clients, result, "Mission", propertiesNotResolved, ["mission"]);
+            return resolver.resolve().ensureType();
+        }
+        else {
+            return result;
         }
     }
 
-    resource function get mission(graphql:Field 'field, int id) returns Mission|error {
-        io:println('field.getType());
-        return error("Not implemented");
-    }
+    isolated resource function get missions(graphql:Field 'field) returns Mission[]|error {
+        graphql:Client 'client = self.clients.get("missions");
+        QueryPropertyClassifier classifier = new ('field, "missions");
 
-    resource function get missions(graphql:Field 'field) returns Mission[]|error {
-        // "id", "designation", "startDate", "endDate", "crew" - solved directly from the `missions` client.
-        // "crew"."name" - resolved from the `astronauts` client using _entities query.
-        io:println('field.getType());
-        return error("Not implemented");
+        string propertyString = classifier.getPropertyString();
+        unResolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
+
+        string queryString = wrapwithQuery("missions", propertyString);
+        MissionsResponse response = check 'client->execute(queryString);
+
+        Mission[] result = response.data.missions;
+
+        if (propertiesNotResolved.length() > 0) {
+            Resolver resolver = new (self.clients, result, "Mission", propertiesNotResolved, ["missions"]);
+            return resolver.resolve().ensureType();
+        }
+        else {
+            return result;
+        }
     }
 
 }
