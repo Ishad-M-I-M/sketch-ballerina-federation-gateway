@@ -82,7 +82,6 @@ public class Resolver {
             else {
                 // Cannot resolve directly and compose.
                 // Iterated through the self.result and resolve the fields util it falls for base condition.
-                // json[] results = [];
 
                 string[] path = self.getEffectivePath('record.'field);
                 string[] pathToCompose = [];
@@ -106,15 +105,12 @@ public class Resolver {
                     foreach var item in pointer {
 
                         Resolver resolver = new (self.clients, item, pointerType, ['record], currentPath);
-                        json composedResult = check resolver.resolve();
-                        // results.push(composedResult);
+                        _ = check resolver.resolve();
                     }
                 }
                 else {
                     log:printDebug("Error: Cannot resolve the field as pointer :" + pointer.toString() + " is not an array.");
                 }
-
-                // _ = check self.compose(self.result, results, self.getEffectivePath('record.'field));
 
             }
 
