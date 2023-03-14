@@ -1,3 +1,4 @@
+import ballerina/log;
 import ballerina/graphql;
 
 public class Resolver {
@@ -10,16 +11,19 @@ public class Resolver {
     // The final result of the resolver. Created an composed while resolving by `resolve()`.
     private json result;
 
+    private string resultType;
+
     private string[] currentPath;
 
-    public isolated function init(map<graphql:Client> clients, json result, unResolvableField[] unResolvableFields, string[] currentPath) {
+    public isolated function init(map<graphql:Client> clients, json result, string resultType, unResolvableField[] unResolvableFields, string[] currentPath) {
         self.clients = clients;
         self.result = result;
+        self.resultType = resultType;
         self.toBeResolved = unResolvableFields;
-        self.currentPath = currentPath;
+        self.currentPath = currentPath; // Path upto the result fields.
     }
 
-    public isolated function resolve() returns Union|Union[]|error {
+    public isolated function resolve() returns json|error {
         // Resolve the fields that are not resolvable.
 
         foreach var 'record in self.toBeResolved {
@@ -41,7 +45,7 @@ public class Resolver {
                 }
 
                 string key = queryPlan.get('record.parent).key;
-                string[] ids = check self.getIdsInPath(self.result, path, 'record.parent);
+                string[] ids = check self.getIdsInPath(self.result, path, self.resultType);
 
                 if 'record.'field.getUnwrappedType().kind == "SCALAR" {
 
@@ -65,7 +69,7 @@ public class Resolver {
                     unResolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
 
                     if (propertiesNotResolved.length() > 0) {
-                        Resolver resolver = new (self.clients, self.result, propertiesNotResolved, self.currentPath);
+                        Resolver resolver = new (self.clients, self.result, self.resultType, propertiesNotResolved, self.currentPath);
                         self.result = check resolver.resolve().ensureType();
                     }
 
@@ -75,34 +79,45 @@ public class Resolver {
             else {
                 // Cannot resolve directly and compose.
                 // Iterated through the self.result and resolve the fields util it falls for base condition.
-                json[] results = [];
+                // json[] results = [];
 
                 string[] path = self.getEffectivePath('record.'field);
-                string[] pathToCompose = self.currentPath.clone();
+                string[] pathToCompose = [];
                 json pointer = self.result;
+                string pointerType = self.resultType;
 
                 string element = path.shift();
                 pathToCompose.push(element);
 
                 while element != "@" {
                     pointer = (<map<json>>pointer)[element];
+                    pointerType = queryPlan.get(pointerType).fields.get(element).'type;
                     element = path.shift();
                     pathToCompose.push(element);
                 }
 
-                foreach var item in <json[]>pointer {
-                    Resolver resolver = new (self.clients, item, ['record], pathToCompose);
-                    json composedResult = check resolver.resolve();
-                    results.push(composedResult);
+                string[] currentPath = self.currentPath.clone();
+                currentPath.push(...pathToCompose);
+
+                if pointer is json[] {
+                    foreach var item in pointer {
+
+                        Resolver resolver = new (self.clients, item, pointerType, ['record], currentPath);
+                        json composedResult = check resolver.resolve();
+                        // results.push(composedResult);
+                    }
+                }
+                else {
+                    log:printDebug("Error: Cannot resolve the field as pointer :" + pointer.toString() + " is not an array.");
                 }
 
-                _ = check self.compose(self.result, results, pathToCompose);
+                // _ = check self.compose(self.result, results, self.getEffectivePath('record.'field));
 
             }
 
         }
 
-        return check self.result.ensureType();
+        return self.result;
     }
 
     // helper functions.
@@ -127,7 +142,19 @@ public class Resolver {
                 }
             }
             else {
-                pointer = (<map<json>>pointer)[element];
+                if pointer is map<json> {
+                    if (pointer.hasKey(element)) {
+                        pointer = pointer.get(element);
+                    }
+                    else {
+                        log:printDebug(element.toString() + " is not found in pointer :" + pointer.toString());
+                    }
+                }
+                else {
+                    // Ideally should not be thrown
+                    return error("Error: Cannot compose into the result.");
+                }
+
             }
             element = pathCopy.shift();
         }
@@ -149,13 +176,13 @@ public class Resolver {
         if path.length() == 0 {
             string key = queryPlan.get(parentType).key;
             string[] ids = [];
-            if pointer is Union {
-                ids.push((<map<json>>pointer)[key].toString());
-            }
-            else if pointer is Union[] {
+            if pointer is json[] {
                 foreach var element in pointer {
                     ids.push((<map<json>>element)[key].toString());
                 }
+            }
+            else if pointer is map<json> {
+                ids.push(pointer[key].toString());
             }
             else {
                 return error("Error: Cannot get ids from the result.");

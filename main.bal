@@ -35,7 +35,7 @@ service on new graphql:Listener(9000) {
         Astronaut result = response.data.astronaut;
 
         if (propertiesNotResolved.length() > 0) {
-            Resolver resolver = new (self.clients, result, propertiesNotResolved, ["astronaut"]);
+            Resolver resolver = new (self.clients, result, "Astronaut", propertiesNotResolved, ["astronaut"]);
             return resolver.resolve().ensureType();
         }
         else {
@@ -57,7 +57,7 @@ service on new graphql:Listener(9000) {
         Astronaut[] result = response.data.astronauts;
 
         if (propertiesNotResolved.length() > 0) {
-            Resolver resolver = new (self.clients, result, propertiesNotResolved, ["astronauts"]);
+            Resolver resolver = new (self.clients, result, "Astronaut", propertiesNotResolved, ["astronauts"]);
             return resolver.resolve().ensureType();
         }
         else {
@@ -79,7 +79,7 @@ service on new graphql:Listener(9000) {
         Mission result = response.data.mission;
 
         if (propertiesNotResolved.length() > 0) {
-            Resolver resolver = new (self.clients, result, propertiesNotResolved, ["mission"]);
+            Resolver resolver = new (self.clients, result, "Mission", propertiesNotResolved, ["mission"]);
             return resolver.resolve().ensureType();
         }
         else {
@@ -100,7 +100,7 @@ service on new graphql:Listener(9000) {
         Mission[] result = response.data.missions;
 
         if (propertiesNotResolved.length() > 0) {
-            Resolver resolver = new (self.clients, result, propertiesNotResolved, ["missions"]);
+            Resolver resolver = new (self.clients, result, "Mission", propertiesNotResolved, ["missions"]);
             return resolver.resolve().ensureType();
         }
         else {
