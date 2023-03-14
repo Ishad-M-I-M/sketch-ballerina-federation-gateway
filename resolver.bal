@@ -43,6 +43,9 @@ public class Resolver {
                 if !(index is ()) {
                     path = path.slice(0, index);
                 }
+                else {
+                    path = path.slice(0, path.length() - 1);
+                }
 
                 string key = queryPlan.get('record.parent).key;
                 string[] ids = check self.getIdsInPath(self.result, path, self.resultType);
@@ -79,7 +82,6 @@ public class Resolver {
             else {
                 // Cannot resolve directly and compose.
                 // Iterated through the self.result and resolve the fields util it falls for base condition.
-                // json[] results = [];
 
                 string[] path = self.getEffectivePath('record.'field);
                 string[] pathToCompose = [];
@@ -103,15 +105,12 @@ public class Resolver {
                     foreach var item in pointer {
 
                         Resolver resolver = new (self.clients, item, pointerType, ['record], currentPath);
-                        json composedResult = check resolver.resolve();
-                        // results.push(composedResult);
+                        _ = check resolver.resolve();
                     }
                 }
                 else {
                     log:printDebug("Error: Cannot resolve the field as pointer :" + pointer.toString() + " is not an array.");
                 }
-
-                // _ = check self.compose(self.result, results, self.getEffectivePath('record.'field));
 
             }
 
@@ -159,8 +158,18 @@ public class Resolver {
             element = pathCopy.shift();
         }
 
-        if pointer is map<json> && resultToCompose is map<json> {
-            compose(pointer, resultToCompose, element);
+        if pointer is map<json> {
+            if resultToCompose is map<json> {
+                compose(pointer, resultToCompose, element);
+            }
+            else if resultToCompose is map<json>[] {
+                compose(pointer, resultToCompose[0], element);
+            }
+            else {
+                // Ideally should not be thrown
+                return error("Error: Cannot compose into the result.");
+            }
+
         }
         else {
             // Ideally should not be thrown
