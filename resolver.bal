@@ -177,9 +177,9 @@ public class Resolver {
     }
 
     // Get the ids of the entities in the path from the current result.
-    // The path should contain upto a '@' element.
+    // The path should contain upto a '@' element if it is an array. ( should not include @ in the path)
     // Don't support '@' elements in the path.
-    private isolated function getIdsInPath(json pointer, string[] path, string parentType) returns string[]|error {
+    isolated function getIdsInPath(json pointer, string[] path, string parentType) returns string[]|error {
 
         if path.length() == 0 {
             string key = queryPlan.get(parentType).key;
