@@ -73,7 +73,7 @@ public class Resolver {
 
                     if (propertiesNotResolved.length() > 0) {
                         Resolver resolver = new (self.clients, self.result, self.resultType, propertiesNotResolved, self.currentPath);
-                        self.result = check resolver.resolve().ensureType();
+                        _ = check resolver.resolve();
                     }
 
                 }
@@ -102,9 +102,8 @@ public class Resolver {
                 currentPath.push(...pathToCompose);
 
                 if pointer is json[] {
-                    foreach var item in pointer {
-
-                        Resolver resolver = new (self.clients, item, pointerType, ['record], currentPath);
+                    foreach var i in 0 ..< pointer.length() {
+                        Resolver resolver = new (self.clients, pointer[i], pointerType, ['record], currentPath);
                         _ = check resolver.resolve();
                     }
                 }
@@ -122,7 +121,7 @@ public class Resolver {
     // helper functions.
 
     // Compose results to the final result. i.e. to the `result` object.
-    private isolated function compose(json finalResult, json resultToCompose, string[] path) returns error? {
+    isolated function compose(json finalResult, json resultToCompose, string[] path) returns error? {
         string[] pathCopy = path.clone();
         json pointer = finalResult;
         string element = pathCopy.shift();
