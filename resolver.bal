@@ -162,8 +162,8 @@ public class Resolver {
             if resultToCompose is map<json> {
                 compose(pointer, resultToCompose, element);
             }
-            else if resultToCompose is map<json>[] {
-                compose(pointer, resultToCompose[0], element);
+            else if resultToCompose is json[] {
+                compose(pointer, <map<json>>resultToCompose[0], element);
             }
             else {
                 // Ideally should not be thrown
