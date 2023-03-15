@@ -1,4 +1,3 @@
-import ballerina/log;
 import ballerina/graphql;
 
 public class Resolver {
@@ -23,22 +22,28 @@ public class Resolver {
         self.currentPath = currentPath; // Path upto the result fields.
     }
 
-    public isolated function resolve() returns json|error {
-        // Resolve the fields that are not resolvable.
+    public isolated function getResult() returns json|error {
+        if self.toBeResolved.length() > 0 {
+            check self.resolve();
+        }
+        return self.result;
+    }
 
-        foreach var 'record in self.toBeResolved {
+    isolated function resolve() returns error? {
+        // Resolve the fields which are not resolved yet.
+        while self.toBeResolved.length() > 0 {
+            unResolvableField 'record = self.toBeResolved.shift();
 
             // Check whether the field need to be resolved is nested by zero or one level.
             // These can be resolved and composed directly to the result.
             if 'record.'field.getPath().slice(self.currentPath.length()).filter(e => e == "@").length() <= 1 {
 
-                // field resolving client.
                 string clientName = queryPlan.get('record.parent).fields.get('record.'field.getName()).'client;
 
                 graphql:Client 'client = self.clients.get(clientName);
 
+                // Get the ids from the current results to resolve by reference.
                 string[] path = self.getEffectivePath('record.'field);
-
                 int? index = path.indexOf("@");
                 if !(index is ()) {
                     path = path.slice(0, index);
@@ -47,18 +52,20 @@ public class Resolver {
                     path = path.slice(0, path.length() - 1);
                 }
 
-                string key = queryPlan.get('record.parent).key;
                 string[] ids = check self.getIdsInPath(self.result, path, self.resultType);
 
-                if 'record.'field.getUnwrappedType().kind == "SCALAR" {
+                string key = queryPlan.get('record.parent).key;
 
+                if 'record.'field.getUnwrappedType().kind == "SCALAR" {
+                    // If the field type is a scalar type, just pass the field name wrapped with entity representation.
                     string queryString = wrapWithEntityRepresentation('record.parent, key, ids, 'record.'field.getName());
 
                     EntityResponse result = check 'client->execute(queryString);
 
-                    _ = check self.compose(self.result, result.data._entities, self.getEffectivePath('record.'field));
+                    check self.compose(self.result, result.data._entities, self.getEffectivePath('record.'field));
                 }
                 else {
+                    // Else need to classify the fields and resolve them accordingly.
                     QueryPropertyClassifier classifier = new ('record.'field, clientName);
 
                     string propertyString = classifier.getPropertyStringWithRoot();
@@ -67,13 +74,13 @@ public class Resolver {
 
                     EntityResponse response = check 'client->execute(queryString);
 
-                    _ = check self.compose(self.result, response.data._entities, self.getEffectivePath('record.'field));
+                    check self.compose(self.result, response.data._entities, self.getEffectivePath('record.'field));
 
                     unResolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
 
                     if (propertiesNotResolved.length() > 0) {
                         Resolver resolver = new (self.clients, self.result, self.resultType, propertiesNotResolved, self.currentPath);
-                        _ = check resolver.resolve();
+                        check resolver.resolve();
                     }
 
                 }
@@ -81,41 +88,39 @@ public class Resolver {
             }
             else {
                 // Cannot resolve directly and compose.
-                // Iterated through the self.result and resolve the fields util it falls for base condition.
+                // Iterated through the self.result and resolve the fields by recursively calling the `resolve()` function 
+                // while updating the path.
 
-                string[] path = self.getEffectivePath('record.'field);
-                string[] pathToCompose = [];
+                string[] currentPath = self.currentPath.clone();
                 json pointer = self.result;
                 string pointerType = self.resultType;
 
+                string[] path = self.getEffectivePath('record.'field);
                 string element = path.shift();
-                pathToCompose.push(element);
+                currentPath.push(element);
 
+                // update the pointer and related information till it finds a @ element.
                 while element != "@" {
-                    pointer = (<map<json>>pointer)[element];
+                    pointer = (<map<json>>pointer).get(element);
                     pointerType = queryPlan.get(pointerType).fields.get(element).'type;
                     element = path.shift();
-                    pathToCompose.push(element);
+                    currentPath.push(element);
                 }
 
-                string[] currentPath = self.currentPath.clone();
-                currentPath.push(...pathToCompose);
-
+                // Iterate over the list in current pointer and compose the results into the inner fields.
                 if pointer is json[] {
                     foreach var i in 0 ..< pointer.length() {
                         Resolver resolver = new (self.clients, pointer[i], pointerType, ['record], currentPath);
-                        _ = check resolver.resolve();
+                        check resolver.resolve();
                     }
                 }
                 else {
-                    log:printDebug("Error: Cannot resolve the field as pointer :" + pointer.toString() + " is not an array.");
+                    return error("Error: Cannot resolve the field.");
                 }
 
             }
 
         }
-
-        return self.result;
     }
 
     // helper functions.
@@ -130,7 +135,7 @@ public class Resolver {
             if element == "@" {
                 if resultToCompose is json[] && pointer is json[] {
                     foreach var i in 0 ..< resultToCompose.length() {
-                        _ = check self.compose(pointer[i], resultToCompose[i], pathCopy);
+                        check self.compose(pointer[i], resultToCompose[i], pathCopy);
                     }
                     return;
                 }
@@ -145,7 +150,7 @@ public class Resolver {
                         pointer = pointer.get(element);
                     }
                     else {
-                        log:printDebug(element.toString() + " is not found in pointer :" + pointer.toString());
+                        return error(element.toString() + " is not found in pointer :" + pointer.toString());
                     }
                 }
                 else {
@@ -177,8 +182,7 @@ public class Resolver {
     }
 
     // Get the ids of the entities in the path from the current result.
-    // The path should contain upto a '@' element if it is an array. ( should not include @ in the path)
-    // Don't support '@' elements in the path.
+    // The path should contain upto a '@' element if it is an array. ( should not include @ in the path).
     isolated function getIdsInPath(json pointer, string[] path, string parentType) returns string[]|error {
 
         if path.length() == 0 {
@@ -208,10 +212,7 @@ public class Resolver {
     }
 
     private isolated function getEffectivePath(graphql:Field 'field) returns string[] {
-        return 'field.getPath().slice(self.currentPath.length()).'map(
-                        isolated function(string|int element) returns string {
-            return element is int ? "@" : element;
-        });
+        return convertPathToStringArray('field.getPath().slice(self.currentPath.length()));
     }
 
 }

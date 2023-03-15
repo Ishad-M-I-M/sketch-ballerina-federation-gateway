@@ -34,13 +34,9 @@ service on new graphql:Listener(9000) {
 
         Astronaut result = response.data.astronaut;
 
-        if (propertiesNotResolved.length() > 0) {
-            Resolver resolver = new (self.clients, result, "Astronaut", propertiesNotResolved, ["astronaut"]);
-            return resolver.resolve().ensureType();
-        }
-        else {
-            return result;
-        }
+        Resolver resolver = new (self.clients, result, "Astronaut", propertiesNotResolved, ["astronaut"]);
+        return resolver.getResult().ensureType();
+
     }
 
     isolated resource function get astronauts(graphql:Field 'field) returns Astronaut[]|error {
@@ -56,13 +52,8 @@ service on new graphql:Listener(9000) {
 
         Astronaut[] result = response.data.astronauts;
 
-        if (propertiesNotResolved.length() > 0) {
-            Resolver resolver = new (self.clients, result, "Astronaut", propertiesNotResolved, ["astronauts"]);
-            return resolver.resolve().ensureType();
-        }
-        else {
-            return result;
-        }
+        Resolver resolver = new (self.clients, result, "Astronaut", propertiesNotResolved, ["astronauts"]);
+        return resolver.getResult().ensureType();
 
     }
 
@@ -78,13 +69,9 @@ service on new graphql:Listener(9000) {
 
         Mission result = response.data.mission;
 
-        if (propertiesNotResolved.length() > 0) {
-            Resolver resolver = new (self.clients, result, "Mission", propertiesNotResolved, ["mission"]);
-            return resolver.resolve().ensureType();
-        }
-        else {
-            return result;
-        }
+        Resolver resolver = new (self.clients, result, "Mission", propertiesNotResolved, ["mission"]);
+        return resolver.getResult().ensureType();
+
     }
 
     isolated resource function get missions(graphql:Field 'field) returns Mission[]|error {
@@ -99,13 +86,8 @@ service on new graphql:Listener(9000) {
 
         Mission[] result = response.data.missions;
 
-        if (propertiesNotResolved.length() > 0) {
-            Resolver resolver = new (self.clients, result, "Mission", propertiesNotResolved, ["missions"]);
-            return resolver.resolve().ensureType();
-        }
-        else {
-            return result;
-        }
+        Resolver resolver = new (self.clients, result, "Mission", propertiesNotResolved, ["missions"]);
+        return resolver.getResult().ensureType();
     }
 
 }
