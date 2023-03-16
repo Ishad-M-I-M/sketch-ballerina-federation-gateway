@@ -66,11 +66,11 @@ public class Resolver {
                 }
                 else {
                     // Else need to classify the fields and resolve them accordingly.
-                    QueryPropertyClassifier classifier = new ('record.'field, clientName);
+                    QueryFieldClassifier classifier = new ('record.'field, clientName);
 
-                    string propertyString = classifier.getPropertyStringWithRoot();
+                    string fieldString = classifier.getFieldStringWithRoot();
 
-                    string queryString = wrapWithEntityRepresentation('record.parent, key, ids, propertyString);
+                    string queryString = wrapWithEntityRepresentation('record.parent, key, ids, fieldString);
 
                     EntityResponse response = check 'client->execute(queryString);
 

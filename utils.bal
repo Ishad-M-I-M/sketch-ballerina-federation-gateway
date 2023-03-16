@@ -1,7 +1,7 @@
 import ballerina/jballerina.java;
 
 // Prepare query string to resolve by reference.
-isolated function wrapWithEntityRepresentation(string typename, string key, string[] ids, string propertyQuery) returns string {
+isolated function wrapWithEntityRepresentation(string typename, string key, string[] ids, string fieldQuery) returns string {
     string[] representations = [];
     foreach var id in ids {
         representations.push(string `{ __typename: "${typename}" ${key}: "${id}"}`);
@@ -12,19 +12,19 @@ isolated function wrapWithEntityRepresentation(string typename, string key, stri
         ) {
             ... on ${typename} {
                 ${key}
-                ${propertyQuery}
+                ${fieldQuery}
             }
         }
     }`;
 }
 
 // Prepare query string to resolve by query.
-isolated function wrapwithQuery(string root, string propertyQuery, map<string>? args = ()) returns string {
+isolated function wrapwithQuery(string root, string fieldQuery, map<string>? args = ()) returns string {
     if args is () {
         return string `query
             {   
                 ${root}{
-                ${propertyQuery}
+                ${fieldQuery}
             }
         }`;
     }
@@ -36,7 +36,7 @@ isolated function wrapwithQuery(string root, string propertyQuery, map<string>? 
         return string `query
             {
                 ${root}(${string:'join(", ", ...argsList)}){
-                ${propertyQuery}
+                ${fieldQuery}
             }
         }`;
     }
