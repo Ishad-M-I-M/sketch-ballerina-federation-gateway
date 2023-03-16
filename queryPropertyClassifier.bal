@@ -63,11 +63,11 @@ class QueryPropertyClassifier {
                 // Create a new classifier for the field.
                 // classify and expand the unResolvableFields with the inner level.
                 QueryPropertyClassifier classifier = new ('field, self.clientName);
-                unResolvableField[] fields = classifier.getUnresolvableFields();
-                self.unresolvableFields.push(...fields);
 
                 // Get the inner property string and push it to the properties array.
                 properties.push(string `${'field.getName()} { ${classifier.getPropertyString()} }`);
+                unResolvableField[] fields = classifier.getUnresolvableFields();
+                self.unresolvableFields.push(...fields);
             }
         }
 
