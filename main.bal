@@ -24,12 +24,12 @@ service on new graphql:Listener(9000) {
 
     isolated resource function get astronaut(int id, graphql:Field 'field) returns Astronaut|error {
         graphql:Client 'client = self.clients.get("astronauts");
-        QueryPropertyClassifier classifier = new ('field, "astronauts");
+        QueryFieldClassifier classifier = new ('field, "astronauts");
 
-        string propertyString = classifier.getPropertyString();
+        string fieldString = classifier.getFieldString();
         unResolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
 
-        string queryString = wrapwithQuery("astronaut", propertyString, {"id": id.toString()});
+        string queryString = wrapwithQuery("astronaut", fieldString, {"id": id.toString()});
         AstronautResponse response = check 'client->execute(queryString);
 
         Astronaut result = response.data.astronaut;
@@ -42,12 +42,12 @@ service on new graphql:Listener(9000) {
     isolated resource function get astronauts(graphql:Field 'field) returns Astronaut[]|error {
 
         graphql:Client 'client = self.clients.get("astronauts");
-        QueryPropertyClassifier classifier = new ('field, "astronauts");
+        QueryFieldClassifier classifier = new ('field, "astronauts");
 
-        string propertyString = classifier.getPropertyString();
+        string fieldString = classifier.getFieldString();
         unResolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
 
-        string queryString = wrapwithQuery("astronauts", propertyString);
+        string queryString = wrapwithQuery("astronauts", fieldString);
         AstronautsResponse response = check 'client->execute(queryString);
 
         Astronaut[] result = response.data.astronauts;
@@ -59,12 +59,12 @@ service on new graphql:Listener(9000) {
 
     isolated resource function get mission(int id, graphql:Field 'field) returns Mission|error {
         graphql:Client 'client = self.clients.get("missions");
-        QueryPropertyClassifier classifier = new ('field, "missions");
+        QueryFieldClassifier classifier = new ('field, "missions");
 
-        string propertyString = classifier.getPropertyString();
+        string fieldString = classifier.getFieldString();
         unResolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
 
-        string queryString = wrapwithQuery("mission", propertyString, {"id": id.toString()});
+        string queryString = wrapwithQuery("mission", fieldString, {"id": id.toString()});
         MissionResponse response = check 'client->execute(queryString);
 
         Mission result = response.data.mission;
@@ -76,12 +76,12 @@ service on new graphql:Listener(9000) {
 
     isolated resource function get missions(graphql:Field 'field) returns Mission[]|error {
         graphql:Client 'client = self.clients.get("missions");
-        QueryPropertyClassifier classifier = new ('field, "missions");
+        QueryFieldClassifier classifier = new ('field, "missions");
 
-        string propertyString = classifier.getPropertyString();
+        string fieldString = classifier.getFieldString();
         unResolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
 
-        string queryString = wrapwithQuery("missions", propertyString);
+        string queryString = wrapwithQuery("missions", fieldString);
         MissionsResponse response = check 'client->execute(queryString);
 
         Mission[] result = response.data.missions;

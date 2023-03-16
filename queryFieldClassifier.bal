@@ -1,6 +1,6 @@
 import ballerina/graphql;
 
-class QueryPropertyClassifier {
+class QueryFieldClassifier {
 
     // client for which the field peroperties are classified.
     private string clientName;
@@ -49,9 +49,9 @@ class QueryPropertyClassifier {
         }
     }
 
-    public isolated function getPropertyString() returns string {
-        // Return property string that can be fetched from the client given.
-        // If no property is availble to fetch with given client return nil.
+    public isolated function getFieldString() returns string {
+        // Return field string that can be fetched from the client given.
+        // If no field is availble to fetch with given client return nil.
 
         string[] properties = [];
         foreach var 'field in self.resolvableFields {
@@ -62,16 +62,16 @@ class QueryPropertyClassifier {
             else {
                 // Create a new classifier for the field.
                 // classify and expand the unResolvableFields with the inner level.
-                QueryPropertyClassifier classifier = new ('field, self.clientName);
+                QueryFieldClassifier classifier = new ('field, self.clientName);
+
+                // Get the inner field string and push it to the properties array.
+                properties.push(string `${'field.getName()} { ${classifier.getFieldString()} }`);
                 unResolvableField[] fields = classifier.getUnresolvableFields();
                 self.unresolvableFields.push(...fields);
-
-                // Get the inner property string and push it to the properties array.
-                properties.push(string `${'field.getName()} { ${classifier.getPropertyString()} }`);
             }
         }
 
-        // Push the key property even it is not requested.
+        // Push the key field even it is not requested.
         string key = queryPlan.get(self.fieldTypeName).key;
         if properties.indexOf(key) is () {
             properties.push(key);
@@ -80,8 +80,8 @@ class QueryPropertyClassifier {
         return string:'join(" ", ...properties);
     }
 
-    public isolated function getPropertyStringWithRoot() returns string {
-        return string `${self.fieldName} { ${self.getPropertyString()} }`;
+    public isolated function getFieldStringWithRoot() returns string {
+        return string `${self.fieldName} { ${self.getFieldString()} }`;
     }
 
     public isolated function getResolvableFields() returns graphql:Field[] {
