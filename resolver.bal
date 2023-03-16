@@ -36,7 +36,7 @@ public class Resolver {
 
             // Check whether the field need to be resolved is nested by zero or one level.
             // These can be resolved and composed directly to the result.
-            if 'record.'field.getPath().slice(self.currentPath.length()).filter(e => e == "@").length() <= 1 {
+            if 'record.'field.getPath().slice(self.currentPath.length()).filter(e => e == "@").length() < 1 {
 
                 string clientName = queryPlan.get('record.parent).fields.get('record.'field.getName()).'client;
 
@@ -44,13 +44,8 @@ public class Resolver {
 
                 // Get the ids from the current results to resolve by reference.
                 string[] path = self.getEffectivePath('record.'field);
-                int? index = path.indexOf("@");
-                if !(index is ()) {
-                    path = path.slice(0, index);
-                }
-                else {
-                    path = path.slice(0, path.length() - 1);
-                }
+
+                path = path.slice(0, path.length() - 1);
 
                 string[] ids = check self.getIdsInPath(self.result, path, self.resultType);
 
