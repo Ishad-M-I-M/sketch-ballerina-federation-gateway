@@ -35,11 +35,10 @@ class QueryFieldClassifier {
         self.fieldName = 'field.getName();
 
         // iterate through all the 
-        foreach var subfield in subfields {
+        foreach graphql:Field subfield in subfields {
             if self.isResolvable(subfield, fieldTypeName, clientName) {
                 self.resolvableFields.push(subfield);
-            }
-            else {
+            } else {
                 self.unresolvableFields.push({
                     'field: subfield,
                     parent: fieldTypeName
@@ -58,8 +57,7 @@ class QueryFieldClassifier {
             // if scalar push name to properties array.
             if 'field.getUnwrappedType().kind == "SCALAR" {
                 properties.push('field.getName());
-            }
-            else {
+            } else {
                 // Create a new classifier for the field.
                 // classify and expand the unResolvableFields with the inner level.
                 QueryFieldClassifier classifier = new ('field, self.clientName);
@@ -98,8 +96,7 @@ class QueryFieldClassifier {
         if 'field.getName() == queryPlan.get(parentType).key ||
             queryPlan.get(parentType).fields.get('field.getName()).'client == clientName {
             return true;
-        }
-        else {
+        } else {
             return false;
         }
     }
