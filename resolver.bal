@@ -43,12 +43,12 @@ public class Resolver {
                 string[] path = self.getEffectivePath('record.'field);
 
                 path = path.slice(0, path.length() - 1);
-                string[] ids = check self.getIdsInPath(self.result, path, self.resultType);
-                string key = queryPlan.get('record.parent).key;
+                string[]? requiredFields = queryPlan.get('record.parent).fields.get('record.'field.getName()).requires;
+                map<json>[] requiredFieldWithValues = check self.getRequiredFieldsInPath(self.result, self.resultType, path, requiredFields);
 
                 if 'record.'field.getUnwrappedType().kind == "SCALAR" {
                     // If the field type is a scalar type, just pass the field name wrapped with entity representation.
-                    string queryString = wrapWithEntityRepresentation('record.parent, key, ids, 'record.'field.getName());
+                    string queryString = wrapWithEntityRepresentation('record.parent, requiredFieldWithValues, 'record.'field.getName());
                     EntityResponse result = check 'client->execute(queryString);
 
                     check self.compose(self.result, result.data._entities, self.getEffectivePath('record.'field));
@@ -56,7 +56,7 @@ public class Resolver {
                     // Else need to classify the fields and resolve them accordingly.
                     QueryFieldClassifier classifier = new ('record.'field, clientName);
                     string fieldString = classifier.getFieldStringWithRoot();
-                    string queryString = wrapWithEntityRepresentation('record.parent, key, ids, fieldString);
+                    string queryString = wrapWithEntityRepresentation('record.parent, requiredFieldWithValues, fieldString);
                     EntityResponse response = check 'client->execute(queryString);
                     check self.compose(self.result, response.data._entities, self.getEffectivePath('record.'field));
                     unResolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
@@ -150,35 +150,49 @@ public class Resolver {
         }
     }
 
-    // Get the ids of the entities in the path from the current result.
-    // The path should contain upto a '@' element if it is an array. ( should not include @ in the path).
-    isolated function getIdsInPath(json pointer, string[] path, string parentType) returns string[]|error {
-
-        if path.length() == 0 {
-            string key = queryPlan.get(parentType).key;
-            string[] ids = [];
-            if pointer is json[] {
-                foreach var element in pointer {
-                    ids.push((<map<json>>element)[key].toString());
-                }
-            } else if pointer is map<json> {
-                ids.push(pointer[key].toString());
-            } else {
-                return error("Error: Cannot get ids from the result.");
-            }
-
-            return ids;
-        }
-
-        string element = path.shift();
-        json newPointer = (<map<json>>pointer)[element];
-        string fieldType = queryPlan.get(parentType).fields.get(element).'type;
-
-        return self.getIdsInPath(newPointer, path, fieldType);
-    }
-
     private isolated function getEffectivePath(graphql:Field 'field) returns string[] {
         return convertPathToStringArray('field.getPath().slice(self.currentPath.length()));
     }
 
+    // Get the values of required fields from the results.
+    // Don't support @ in the path.
+    isolated function getRequiredFieldsInPath(json pointer, string pointerType, string[] path, string[]? requiredFields = ()) returns map<json>[]|error {
+        if path.length() == 0 {
+            string key = queryPlan.get(pointerType).key;
+            string[] requiredFieldMapKeys = [key];
+
+            if requiredFields is string[] {
+                requiredFieldMapKeys.push(...requiredFields);
+            }
+
+            map<json>[] fields = [];
+            if pointer is json[] {
+                foreach var element in pointer {
+                    map<json> fieldValues = {};
+                    foreach var requiredField in requiredFieldMapKeys {
+                        fieldValues[requiredField] = (<map<json>>element)[requiredField];
+                    }
+                    fields.push(fieldValues);
+                }
+            } else if pointer is map<json> {
+                map<json> fieldValues = {};
+                foreach var requiredField in requiredFieldMapKeys {
+                    fieldValues[requiredField] = (<map<json>>pointer)[requiredField];
+                }
+                fields.push(fieldValues);
+            } else {
+                return error("Error: Cannot get ids from the result.");
+            }
+
+            return fields;
+        }
+
+        string element = path.shift();
+        json newPointer = (<map<json>>pointer)[element];
+        string fieldType = queryPlan.get(pointerType).fields.get(element).'type;
+
+        return self.getRequiredFieldsInPath(newPointer, fieldType, path, requiredFields);
+    }
+
 }
+

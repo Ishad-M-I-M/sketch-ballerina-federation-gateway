@@ -7,6 +7,7 @@ public type fieldRecord record {|
     readonly string name;
     string 'type;
     string 'client;
+    string[] requires?;
 |};
 
 public type queryPlanEntry record {|

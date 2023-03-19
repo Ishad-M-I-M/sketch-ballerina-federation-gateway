@@ -1,17 +1,21 @@
 import ballerina/jballerina.java;
 
 // Prepare query string to resolve by reference.
-isolated function wrapWithEntityRepresentation(string typename, string key, string[] ids, string fieldQuery) returns string {
+isolated function wrapWithEntityRepresentation(string typename, map<json>[] fieldsRequiredToFetch, string fieldQuery) returns string {
     string[] representations = [];
-    foreach var id in ids {
-        representations.push(string `{ __typename: "${typename}" ${key}: "${id}"}`);
+    foreach var entry in fieldsRequiredToFetch {
+        string keyValueString = "";
+        foreach var [key, value] in entry.entries() {
+            keyValueString = keyValueString + string `${key}: "${value.toString()}" `;
+
+        }
+        representations.push(string `{ __typename: "${typename}", ${keyValueString} }`);
     }
     return string `query{
         _entities(
             representations: [${string:'join(", ", ...representations)}]
         ) {
             ... on ${typename} {
-                ${key}
                 ${fieldQuery}
             }
         }
@@ -27,8 +31,7 @@ isolated function wrapwithQuery(string root, string fieldQuery, map<string>? arg
                 ${fieldQuery}
             }
         }`;
-    }
-    else {
+    } else {
         string[] argsList = [];
         foreach var [key, value] in args.entries() {
             argsList.push(string `${key}: ${value}`);
