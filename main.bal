@@ -23,8 +23,8 @@ service on new graphql:Listener(9000) {
     }
 
     isolated resource function get astronaut(int id, graphql:Field 'field) returns Astronaut|error {
-        graphql:Client 'client = self.clients.get("astronauts");
-        core:QueryFieldClassifier classifier = new ('field, queryPlan, "astronauts");
+        graphql:Client 'client = self.clients.get(ASTRONAUTS);
+        core:QueryFieldClassifier classifier = new ('field, queryPlan, ASTRONAUTS);
 
         string fieldString = classifier.getFieldString();
         core:unResolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
@@ -40,8 +40,8 @@ service on new graphql:Listener(9000) {
     }
 
     isolated resource function get astronauts(graphql:Field 'field) returns Astronaut[]|error {
-        graphql:Client 'client = self.clients.get("astronauts");
-        core:QueryFieldClassifier classifier = new ('field, queryPlan, "astronauts");
+        graphql:Client 'client = self.clients.get(ASTRONAUTS);
+        core:QueryFieldClassifier classifier = new ('field, queryPlan, ASTRONAUTS);
 
         string fieldString = classifier.getFieldString();
         core:unResolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
@@ -57,8 +57,8 @@ service on new graphql:Listener(9000) {
     }
 
     isolated resource function get mission(int id, graphql:Field 'field) returns Mission|error {
-        graphql:Client 'client = self.clients.get("missions");
-        core:QueryFieldClassifier classifier = new ('field, queryPlan, "missions");
+        graphql:Client 'client = self.clients.get(MISSIONS);
+        core:QueryFieldClassifier classifier = new ('field, queryPlan, MISSIONS);
 
         string fieldString = classifier.getFieldString();
         core:unResolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
@@ -74,8 +74,8 @@ service on new graphql:Listener(9000) {
     }
 
     isolated resource function get missions(graphql:Field 'field) returns Mission[]|error {
-        graphql:Client 'client = self.clients.get("missions");
-        core:QueryFieldClassifier classifier = new ('field, queryPlan, "missions");
+        graphql:Client 'client = self.clients.get(MISSIONS);
+        core:QueryFieldClassifier classifier = new ('field, queryPlan, MISSIONS);
 
         string fieldString = classifier.getFieldString();
         core:unResolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
