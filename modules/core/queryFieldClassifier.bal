@@ -1,6 +1,6 @@
 import ballerina/graphql;
 
-class QueryFieldClassifier {
+public class QueryFieldClassifier {
 
     // client for which the field peroperties are classified.
     private string clientName;
@@ -16,9 +16,13 @@ class QueryFieldClassifier {
     // parent type name is needed to decide which type the subfield belongs for.
     private unResolvableField[] unresolvableFields;
 
-    isolated function init(graphql:Field 'field, string clientName) {
+    // Query plan used to classify the fields.
+    private final readonly & table<queryPlanEntry> key(typename) queryPlan;
+
+    public isolated function init(graphql:Field 'field, readonly & table<queryPlanEntry> key(typename) queryPlan, string clientName) {
         // initialize the class properties.
         self.clientName = clientName;
+        self.queryPlan = queryPlan;
         self.resolvableFields = [];
         self.unresolvableFields = [];
 
@@ -35,10 +39,11 @@ class QueryFieldClassifier {
         self.fieldName = 'field.getName();
 
         // iterate through all the 
-        foreach graphql:Field subfield in subfields {
+        foreach var subfield in subfields {
             if self.isResolvable(subfield, fieldTypeName, clientName) {
                 self.resolvableFields.push(subfield);
-            } else {
+            }
+            else {
                 self.unresolvableFields.push({
                     'field: subfield,
                     parent: fieldTypeName
@@ -57,10 +62,11 @@ class QueryFieldClassifier {
             // if scalar push name to properties array.
             if 'field.getUnwrappedType().kind == "SCALAR" {
                 properties.push('field.getName());
-            } else {
+            }
+            else {
                 // Create a new classifier for the field.
                 // classify and expand the unResolvableFields with the inner level.
-                QueryFieldClassifier classifier = new ('field, self.clientName);
+                QueryFieldClassifier classifier = new ('field, self.queryPlan, self.clientName);
 
                 // Get the inner field string and push it to the properties array.
                 properties.push(string `${'field.getName()} { ${classifier.getFieldString()} }`);
@@ -70,7 +76,7 @@ class QueryFieldClassifier {
         }
 
         // Push the key field even it is not requested.
-        string key = queryPlan.get(self.fieldTypeName).key;
+        string key = self.queryPlan.get(self.fieldTypeName).keys.get(self.clientName);
         if properties.indexOf(key) is () {
             properties.push(key);
         }
@@ -91,12 +97,13 @@ class QueryFieldClassifier {
     }
 
     private isolated function isResolvable(graphql:Field 'field, string parentType, string clientName) returns boolean {
-        // check wether the field is the key. Because key SHOULD be resolvable from any client.
+        // check wether the field is the key. Because key SHOULD be resolvable from the client.
         // OR the client name for resolving the field is equal to the given clientName.
-        if 'field.getName() == queryPlan.get(parentType).key ||
-            queryPlan.get(parentType).fields.get('field.getName()).'client == clientName {
+        if 'field.getName() == self.queryPlan.get(parentType).keys[clientName] ||
+            self.queryPlan.get(parentType).fields.get('field.getName()).'client == clientName {
             return true;
-        } else {
+        }
+        else {
             return false;
         }
     }

@@ -1,5 +1,5 @@
 // Need to generate by code modifier plugin
-
+import initial_impl.core;
 import ballerina/graphql;
 
 //Entry point to gateway. Will be generated
@@ -24,68 +24,68 @@ service on new graphql:Listener(9000) {
 
     isolated resource function get astronaut(int id, graphql:Field 'field) returns Astronaut|error {
         graphql:Client 'client = self.clients.get("astronauts");
-        QueryFieldClassifier classifier = new ('field, "astronauts");
+        core:QueryFieldClassifier classifier = new ('field, queryPlan, "astronauts");
 
         string fieldString = classifier.getFieldString();
-        unResolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
+        core:unResolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
 
-        string queryString = wrapwithQuery("astronaut", fieldString, {"id": id.toString()});
+        string queryString = core:wrapwithQuery("astronaut", fieldString, {"id": id.toString()});
         AstronautResponse response = check 'client->execute(queryString);
 
         Astronaut result = response.data.astronaut;
 
-        Resolver resolver = new (self.clients, result, "Astronaut", propertiesNotResolved, ["astronaut"]);
+        core:Resolver resolver = new (self.clients, queryPlan, result, "Astronaut", propertiesNotResolved, ["astronaut"]);
         return resolver.getResult().ensureType();
 
     }
 
     isolated resource function get astronauts(graphql:Field 'field) returns Astronaut[]|error {
         graphql:Client 'client = self.clients.get("astronauts");
-        QueryFieldClassifier classifier = new ('field, "astronauts");
+        core:QueryFieldClassifier classifier = new ('field, queryPlan, "astronauts");
 
         string fieldString = classifier.getFieldString();
-        unResolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
+        core:unResolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
 
-        string queryString = wrapwithQuery("astronauts", fieldString);
+        string queryString = core:wrapwithQuery("astronauts", fieldString);
         AstronautsResponse response = check 'client->execute(queryString);
 
         Astronaut[] result = response.data.astronauts;
 
-        Resolver resolver = new (self.clients, result, "Astronaut", propertiesNotResolved, ["astronauts"]);
+        core:Resolver resolver = new (self.clients, queryPlan, result, "Astronaut", propertiesNotResolved, ["astronauts"]);
         return resolver.getResult().ensureType();
 
     }
 
     isolated resource function get mission(int id, graphql:Field 'field) returns Mission|error {
         graphql:Client 'client = self.clients.get("missions");
-        QueryFieldClassifier classifier = new ('field, "missions");
+        core:QueryFieldClassifier classifier = new ('field, queryPlan, "missions");
 
         string fieldString = classifier.getFieldString();
-        unResolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
+        core:unResolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
 
-        string queryString = wrapwithQuery("mission", fieldString, {"id": id.toString()});
+        string queryString = core:wrapwithQuery("mission", fieldString, {"id": id.toString()});
         MissionResponse response = check 'client->execute(queryString);
 
         Mission result = response.data.mission;
 
-        Resolver resolver = new (self.clients, result, "Mission", propertiesNotResolved, ["mission"]);
+        core:Resolver resolver = new (self.clients, queryPlan, result, "Mission", propertiesNotResolved, ["mission"]);
         return resolver.getResult().ensureType();
 
     }
 
     isolated resource function get missions(graphql:Field 'field) returns Mission[]|error {
         graphql:Client 'client = self.clients.get("missions");
-        QueryFieldClassifier classifier = new ('field, "missions");
+        core:QueryFieldClassifier classifier = new ('field, queryPlan, "missions");
 
         string fieldString = classifier.getFieldString();
-        unResolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
+        core:unResolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
 
-        string queryString = wrapwithQuery("missions", fieldString);
+        string queryString = core:wrapwithQuery("missions", fieldString);
         MissionsResponse response = check 'client->execute(queryString);
 
         Mission[] result = response.data.missions;
 
-        Resolver resolver = new (self.clients, result, "Mission", propertiesNotResolved, ["missions"]);
+        core:Resolver resolver = new (self.clients, queryPlan, result, "Mission", propertiesNotResolved, ["missions"]);
         return resolver.getResult().ensureType();
     }
 
