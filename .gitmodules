@@ -1,3 +1,0 @@
-[submodule "ballerina/modules/core"]
-	path = ballerina/modules/core
-	url = https://github.com/Ishad-M-I-M/module-ballerina-federation-gateway-core.git

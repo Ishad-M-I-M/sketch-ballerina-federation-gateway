@@ -35,6 +35,3 @@ type MissionsResponse record {
     record {|Mission[] missions;|} data;
 };
 
-type EntityResponse record {
-    record {|json[] _entities;|} data;
-};
