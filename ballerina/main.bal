@@ -26,7 +26,7 @@ isolated service on new graphql:Listener(9000) {
         QueryFieldClassifier classifier = new ('field, queryPlan, ASTRONAUTS);
 
         string fieldString = classifier.getFieldString();
-        unResolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
+        UnResolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
 
         string queryString = wrapwithQuery("astronaut", fieldString, {"id": id.toString()});
         astronautResponse response = check astronautClient->execute(queryString);
@@ -41,7 +41,7 @@ isolated service on new graphql:Listener(9000) {
         QueryFieldClassifier classifier = new ('field, queryPlan, ASTRONAUTS);
 
         string fieldString = classifier.getFieldString();
-        unResolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
+        UnResolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
 
         string queryString = wrapwithQuery("astronauts", fieldString);
         astronautsResponse response = check astronautClient->execute(queryString);
@@ -58,7 +58,7 @@ isolated service on new graphql:Listener(9000) {
         QueryFieldClassifier classifier = new ('field, queryPlan, MISSIONS);
 
         string fieldString = classifier.getFieldString();
-        unResolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
+        UnResolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
 
         string queryString = wrapwithQuery("mission", fieldString, {"id": id.toString()});
         missionResponse response = check 'client->execute(queryString);
@@ -75,7 +75,7 @@ isolated service on new graphql:Listener(9000) {
         QueryFieldClassifier classifier = new ('field, queryPlan, MISSIONS);
 
         string fieldString = classifier.getFieldString();
-        unResolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
+        UnResolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
 
         string queryString = wrapwithQuery("missions", fieldString);
         missionsResponse response = check 'client->execute(queryString);

@@ -1,6 +1,6 @@
 public const string MISSIONS = "missions";
 public const string ASTRONAUTS = "astronauts";
-public final readonly & table<queryPlanEntry> key(typename) queryPlan = table [
+public final readonly & table<QueryPlanEntry> key(typename) queryPlan = table [
     {
         typename: "Astronaut",
         keys: {"astronauts": "id", "missions": "id"},

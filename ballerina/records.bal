@@ -1,28 +1,28 @@
 import ballerina/graphql;
 
-public type unResolvableField record {|
+public type UnResolvableField record {|
     string parent;
     graphql:Field 'field;
 |};
 
-public type requiresFieldRecord record {|
+public type RequiresFieldRecord record {|
     string clientName;
     string fieldString;
 |};
 
-public type fieldRecord record {|
+public type FieldRecord record {|
     readonly string name;
     string 'type;
     string 'client;
     // In query plan generation need to process the required field string and seperate the fields and the client
     // which will resolve it.
-    requiresFieldRecord[] requires?;
+    RequiresFieldRecord[] requires?;
 |};
 
-public type queryPlanEntry record {|
+public type QueryPlanEntry record {|
     readonly string typename;
     map<string> keys;
-    readonly & table<fieldRecord> key(name) fields;
+    readonly & table<FieldRecord> key(name) fields;
 |};
 
 type EntityResponse record {

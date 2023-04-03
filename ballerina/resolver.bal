@@ -3,7 +3,7 @@ import ballerina/graphql;
 
 public class Resolver {
 
-    private unResolvableField[] toBeResolved;
+    private UnResolvableField[] toBeResolved;
 
     // The final result of the resolver. Created an composed while resolving by `resolve()`.
     private json result;
@@ -11,9 +11,9 @@ public class Resolver {
     private string[] currentPath;
 
     // Query plan used to classify the fields.
-    private final readonly & table<queryPlanEntry> key(typename) queryPlan;
+    private final readonly & table<QueryPlanEntry> key(typename) queryPlan;
 
-    public isolated function init( readonly & table<queryPlanEntry> key(typename) queryPlan, json result, string resultType, unResolvableField[] unResolvableFields, string[] currentPath) {
+    public isolated function init( readonly & table<QueryPlanEntry> key(typename) queryPlan, json result, string resultType, UnResolvableField[] unResolvableFields, string[] currentPath) {
         self.queryPlan = queryPlan;
         self.result = result;
         self.resultType = resultType;
@@ -31,7 +31,7 @@ public class Resolver {
     isolated function resolve() returns error? {
         // Resolve the fields which are not resolved yet.
         while self.toBeResolved.length() > 0 {
-            unResolvableField 'record = self.toBeResolved.shift();
+            UnResolvableField 'record = self.toBeResolved.shift();
             string[] path = self.getEffectivePath('record.'field);
 
             // Check whether the field need to be resolved is nested by zero or one level.
@@ -50,7 +50,7 @@ public class Resolver {
                     path = path.slice(0, path.length() - 2);
                 }
 
-                requiresFieldRecord[]? requiredFields = self.queryPlan.get('record.parent).fields.get('record.'field.getName()).requires;
+                RequiresFieldRecord[]? requiredFields = self.queryPlan.get('record.parent).fields.get('record.'field.getName()).requires;
 
                 map<json>[] requiredFieldWithValues = check self.getRequiredFieldsInPath(self.result, self.resultType, clientName, path, requiredFields);
 
@@ -74,7 +74,7 @@ public class Resolver {
 
                     check self.compose(self.result, response.data._entities, self.getEffectivePath('record.'field));
 
-                    unResolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
+                    UnResolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
 
                     if (propertiesNotResolved.length() > 0) {
                         Resolver resolver = new (self.queryPlan, self.result, self.resultType, propertiesNotResolved, self.currentPath);
@@ -183,7 +183,7 @@ public class Resolver {
 
     // Get the values of required fields from the results.
     // Don't support @ in the path.
-    isolated function getRequiredFieldsInPath(json pointer, string pointerType, string clientName, string[] path, requiresFieldRecord[]? requiredFields = ()) returns map<json>[]|error {
+    isolated function getRequiredFieldsInPath(json pointer, string pointerType, string clientName, string[] path, RequiresFieldRecord[]? requiredFields = ()) returns map<json>[]|error {
         if path.length() == 0 {
             string key = self.queryPlan.get(pointerType).keys.get(clientName);
 
@@ -217,13 +217,13 @@ public class Resolver {
     }
 
     // Fetch the fields from subgraphs and add them to the fieldValues map.
-    isolated function fetchRequiredFields(requiresFieldRecord[]? requiresFields, map<json> fieldValues, string typeName) returns map<json>|error {
+    isolated function fetchRequiredFields(RequiresFieldRecord[]? requiresFields, map<json> fieldValues, string typeName) returns map<json>|error {
         if requiresFields is () {
             return fieldValues;
         }
 
         map<json> newFieldValues = fieldValues.clone();
-        foreach requiresFieldRecord 'record in requiresFields {
+        foreach RequiresFieldRecord 'record in requiresFields {
             string queryString = wrapWithEntityRepresentation(typeName, [fieldValues], 'record.fieldString);
             graphql:Client 'client = getClient('record.clientName);
 

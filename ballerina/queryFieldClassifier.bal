@@ -14,12 +14,12 @@ public class QueryFieldClassifier {
 
     // unresolvable fields are pushed to the map along with the parentType name.
     // parent type name is needed to decide which type the subfield belongs for.
-    private unResolvableField[] unresolvableFields;
+    private UnResolvableField[] unresolvableFields;
 
     // Query plan used to classify the fields.
-    private final readonly & table<queryPlanEntry> key(typename) queryPlan;
+    private final readonly & table<QueryPlanEntry> key(typename) queryPlan;
 
-    public isolated function init(graphql:Field 'field, readonly & table<queryPlanEntry> key(typename) queryPlan, string clientName) {
+    public isolated function init(graphql:Field 'field, readonly & table<QueryPlanEntry> key(typename) queryPlan, string clientName) {
         // initialize the class properties.
         self.clientName = clientName;
         self.queryPlan = queryPlan;
@@ -70,7 +70,7 @@ public class QueryFieldClassifier {
 
                 // Get the inner field string and push it to the properties array.
                 properties.push(string `${'field.getName()} { ${classifier.getFieldString()} }`);
-                unResolvableField[] fields = classifier.getUnresolvableFields();
+                UnResolvableField[] fields = classifier.getUnresolvableFields();
                 self.unresolvableFields.push(...fields);
             }
         }
@@ -92,7 +92,7 @@ public class QueryFieldClassifier {
         return self.resolvableFields;
     }
 
-    public isolated function getUnresolvableFields() returns unResolvableField[] {
+    public isolated function getUnresolvableFields() returns UnResolvableField[] {
         return self.unresolvableFields;
     }
 
