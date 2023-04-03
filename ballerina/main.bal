@@ -29,7 +29,7 @@ isolated service on new graphql:Listener(9000) {
         unResolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
 
         string queryString = wrapwithQuery("astronaut", fieldString, {"id": id.toString()});
-        AstronautResponse response = check astronautClient->execute(queryString);
+        astronautResponse response = check astronautClient->execute(queryString);
 
         Astronaut result = response.data.astronaut;
 
@@ -44,7 +44,7 @@ isolated service on new graphql:Listener(9000) {
         unResolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
 
         string queryString = wrapwithQuery("astronauts", fieldString);
-        AstronautsResponse response = check astronautClient->execute(queryString);
+        astronautsResponse response = check astronautClient->execute(queryString);
 
         Astronaut[] result = response.data.astronauts;
 
@@ -61,7 +61,7 @@ isolated service on new graphql:Listener(9000) {
         unResolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
 
         string queryString = wrapwithQuery("mission", fieldString, {"id": id.toString()});
-        MissionResponse response = check 'client->execute(queryString);
+        missionResponse response = check 'client->execute(queryString);
 
         Mission result = response.data.mission;
 
@@ -78,7 +78,7 @@ isolated service on new graphql:Listener(9000) {
         unResolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
 
         string queryString = wrapwithQuery("missions", fieldString);
-        MissionsResponse response = check 'client->execute(queryString);
+        missionsResponse response = check 'client->execute(queryString);
 
         Mission[] result = response.data.missions;
 
