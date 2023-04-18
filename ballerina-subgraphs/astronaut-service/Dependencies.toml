@@ -64,7 +64,7 @@ dependencies = [
 [[package]]
 org = "ballerina"
 name = "graphql"
-version = "1.8.0"
+version = "1.7.0"
 dependencies = [
 	{org = "ballerina", name = "auth"},
 	{org = "ballerina", name = "file"},
@@ -129,9 +129,6 @@ dependencies = [
 org = "ballerina"
 name = "jballerina.java"
 version = "0.0.0"
-modules = [
-	{org = "ballerina", packageName = "jballerina.java", moduleName = "jballerina.java"}
-]
 
 [[package]]
 org = "ballerina"
@@ -220,9 +217,6 @@ name = "lang.value"
 version = "0.0.0"
 dependencies = [
 	{org = "ballerina", name = "jballerina.java"}
-]
-modules = [
-	{org = "ballerina", packageName = "lang.value", moduleName = "lang.value"}
 ]
 
 [[package]]
@@ -345,15 +339,13 @@ modules = [
 
 [[package]]
 org = "mohamed_ishad"
-name = "initial_impl"
+name = "astronaut_service"
 version = "0.1.0"
 dependencies = [
 	{org = "ballerina", name = "graphql"},
-	{org = "ballerina", name = "jballerina.java"},
-	{org = "ballerina", name = "lang.value"},
 	{org = "ballerinai", name = "observe"}
 ]
 modules = [
-	{org = "mohamed_ishad", packageName = "initial_impl", moduleName = "initial_impl"}
+	{org = "mohamed_ishad", packageName = "astronaut_service", moduleName = "astronaut_service"}
 ]
 
