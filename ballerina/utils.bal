@@ -25,7 +25,7 @@ isolated function getKeyValueString(map<json> fieldMap) returns string {
         if value is map<json> {
             keyValueString = keyValueString + string `${key}: { ${getKeyValueString(value)} } `;
         } else {
-            keyValueString = keyValueString + string `${key}: "${value.toString()}" `;
+            keyValueString = keyValueString + string `${key}: ${getParamAsString(value)} `;
         }
     }
     return keyValueString;
@@ -66,5 +66,13 @@ isolated function getOfType(graphql:__Type schemaType) returns graphql:__Type {
         return schemaType;
     } else {
         return getOfType(ofType);
+    }
+}
+
+isolated function getParamAsString(any param) returns string {
+    if param is string {
+        return "\"" + param + "\"";
+    } else {
+        return param.toString();
     }
 }
