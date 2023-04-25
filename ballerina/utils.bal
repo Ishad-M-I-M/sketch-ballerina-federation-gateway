@@ -1,3 +1,5 @@
+import ballerina/graphql;
+
 // Prepare query string to resolve by reference.
 isolated function wrapWithEntityRepresentation(string typename, map<json>[] fieldsRequiredToFetch, string fieldQuery) returns string {
     string[] representations = [];
@@ -56,4 +58,13 @@ isolated function convertPathToStringArray((string|int)[] path) returns string[]
     return path.'map(isolated function(string|int element) returns string {
         return element is int ? "@" : element;
     });
+}
+
+isolated function getOfType(graphql:__Type schemaType) returns graphql:__Type {
+    graphql:__Type? ofType = schemaType?.ofType;
+    if ofType is () {
+        return schemaType;
+    } else {
+        return getOfType(ofType);
+    }
 }
