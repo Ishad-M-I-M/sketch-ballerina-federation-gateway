@@ -2,12 +2,12 @@ import ballerina/graphql;
 import ballerina/graphql.subgraph;
 
 @subgraph:Subgraph
-service on new graphql:Listener(5002) {
-    resource function get missions() returns Mission[] {
+isolated service on new graphql:Listener(5002) {
+    isolated resource function get missions() returns Mission[] {
         return missions;
     }
-    resource function get mission(int id) returns Mission {
-        return missions.filter(function(Mission mission) returns boolean {
+    isolated resource function get mission(int id) returns Mission {
+        return missions.filter(isolated function(Mission mission) returns boolean {
             return mission.id == id;
         })[0];
     }
@@ -16,14 +16,14 @@ service on new graphql:Listener(5002) {
 @subgraph:Entity {
     'key: "id"
 }
-distinct service class Mission {
-    public int id;
-    private string designation;
-    private string? startDate;
-    private string? endDate;
-    private int[] crewIds;
+distinct isolated service readonly class Mission {
+    public final int id;
+    private final string designation;
+    private final string? startDate;
+    private final string? endDate;
+    private final readonly & int[] crewIds;
 
-    function init(int id, string designation, string? startDate, string? endDate, int[] crewIds) {
+    isolated function init(int id, string designation, string? startDate, string? endDate, readonly & int[] crewIds) {
         self.id = id;
         self.designation = designation;
         self.startDate = startDate;
@@ -31,29 +31,29 @@ distinct service class Mission {
         self.crewIds = crewIds;
     }
 
-    resource function get id() returns int {
+    isolated resource function get id() returns int {
         return self.id;
     }
 
-    resource function get designation() returns string {
+    isolated resource function get designation() returns string {
         return self.designation;
     }
 
-    resource function get startDate() returns string? {
+    isolated resource function get startDate() returns string? {
         return self.startDate;
     }
 
-    resource function get endDate() returns string? {
+    isolated resource function get endDate() returns string? {
         return self.endDate;
     }
 
-    resource function get crew() returns Astronaut[] {
-        return self.crewIds.map(function(int id) returns Astronaut {
+    isolated resource function get crew() returns Astronaut[] {
+        return self.crewIds.map(isolated function(int id) returns Astronaut {
             return new (id);
         });
     }
 
-    public function includes(int id) returns boolean {
+    public isolated function includes(int id) returns boolean {
         return self.crewIds.indexOf(id) != ();
     }
 
@@ -61,29 +61,30 @@ distinct service class Mission {
 
 @subgraph:Entity {
     'key: "id",
-    resolveReference: function(subgraph:Representation representation) returns Astronaut?|error {
+    resolveReference: isolated function(subgraph:Representation representation) returns Astronaut?|error {
         int id = check representation["id"].ensureType();
         return new (id);
     }
 }
-distinct service class Astronaut {
-    private int id;
-    function init(int id) {
+distinct isolated service readonly class Astronaut {
+    private final int id;
+    isolated function init(int id) {
         self.id = id;
     }
 
-    resource function get id() returns int {
+    isolated resource function get id() returns int {
         return self.id;
     }
 
-    resource function get missions() returns Mission[] {
-        return missions.filter(function(Mission mission) returns boolean {
-            return mission.includes(self.id);
+    isolated resource function get missions() returns Mission[] {
+        final int id = self.id;
+        return missions.filter(isolated function(Mission mission) returns boolean {
+            return mission.includes(id);
         });
     }
 }
 
-Mission[] missions = [
+final readonly & Mission[] missions = [
     new Mission(1, "Apollo 1", (), (), [14, 30, 7]),
     new Mission(2, "Apollo 4", "1967-11-09T12:00:01.000Z", "1967-11-09T20:37:00.000Z", []),
     new Mission(3, "Apollo 5", "1968-01-22T22:48:09.000Z", "1968-01-23T09:58:00.000Z", []),
@@ -99,4 +100,4 @@ Mission[] missions = [
     new Mission(13, "Apollo 15", "1971-07-26T13:34:00.600Z", "1971-08-07T20:45:53.000Z", [26, 32, 17]),
     new Mission(14, "Apollo 16", "1972-04-16T17:54:00.000Z", "1972-04-27T19:45:05.000Z", [31, 19, 11]),
     new Mission(15, "Apollo 17", "1972-12-07T05:33:00.000Z", "1972-12-19T19:24:59.000Z", [6, 13, 24])
-    ];
+];

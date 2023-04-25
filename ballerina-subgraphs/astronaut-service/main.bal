@@ -2,19 +2,19 @@ import ballerina/graphql;
 import ballerina/graphql.subgraph;
 
 @subgraph:Subgraph
-service on new graphql:Listener(5001) {
-    resource function get astronauts() returns Astronaut[] {
+isolated service on new graphql:Listener(5001) {
+    isolated resource function get astronauts() returns Astronaut[] {
         return astronauts;
     }
 
-    resource function get astronaut(int id) returns Astronaut? {
+    isolated resource function get astronaut(int id) returns Astronaut? {
         return getAstronaut(id);
     }
 }
 
 @subgraph:Entity {
     'key: "id",
-    resolveReference: function(subgraph:Representation representation) returns Astronaut?|error {
+    resolveReference: isolated function(subgraph:Representation representation) returns Astronaut?|error {
         int id = check representation["id"].ensureType();
         return getAstronaut(id);
     }
@@ -24,7 +24,7 @@ type Astronaut record {|
     string name;
 |};
 
-function getAstronaut(int id) returns Astronaut? {
+isolated function getAstronaut(int id) returns Astronaut? {
     foreach var astronaut in astronauts {
         if (astronaut.id == id) {
             return astronaut;
@@ -33,7 +33,7 @@ function getAstronaut(int id) returns Astronaut? {
     return ();
 }
 
-Astronaut[] astronauts = [
+final readonly & Astronaut[] astronauts = [
     {
         "id": 1,
         "name": "Buzz Aldrin"
@@ -162,5 +162,5 @@ Astronaut[] astronauts = [
         "id": 32,
         "name": "Alfred Worden"
     }
-    ];
+];
 

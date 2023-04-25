@@ -1,26 +1,52 @@
-extend schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@external" ,"@requires" ,"@provides" ,"@key" ,"@shareable" ,"@inaccessible" ,"@tag" ,"@override" ,"@extends" ,"FieldSet"], as: "") 
+extend schema
+  @link(
+    url: "https://specs.apollo.dev/federation/v2.0"
+    import: [
+      "@external"
+      "@requires"
+      "@provides"
+      "@key"
+      "@shareable"
+      "@inaccessible"
+      "@tag"
+      "@override"
+      "@extends"
+      "FieldSet"
+    ]
+    as: ""
+  )
 
-directive @external on FIELD_DEFINITION|OBJECT
+directive @external on FIELD_DEFINITION | OBJECT
 
 directive @requires(fields: FieldSet!) on FIELD_DEFINITION
 
 directive @provides(fields: FieldSet!) on FIELD_DEFINITION
 
-directive @key(fields: FieldSet!, resolvable: Boolean = true) repeatable on OBJECT|INTERFACE
+directive @key(
+  fields: FieldSet!
+  resolvable: Boolean = true
+) repeatable on OBJECT | INTERFACE
 
-directive @link(url: String!, as: String, for: link__Purpose, import: [link__Import]) repeatable on SCHEMA
+directive @link(
+  url: String!
+  as: String
+  for: link__Purpose
+  import: [link__Import]
+) repeatable on SCHEMA
 
-directive @shareable on OBJECT|FIELD_DEFINITION
+directive @shareable on OBJECT | FIELD_DEFINITION
 
-directive @inaccessible on FIELD_DEFINITION|OBJECT|INTERFACE|UNION|ARGUMENT_DEFINITION|SCALAR|ENUM|ENUM_VALUE|INPUT_OBJECT|INPUT_FIELD_DEFINITION
+directive @inaccessible on FIELD_DEFINITION | OBJECT | INTERFACE | UNION | ARGUMENT_DEFINITION | SCALAR | ENUM | ENUM_VALUE | INPUT_OBJECT | INPUT_FIELD_DEFINITION
 
-directive @tag(name: String!) repeatable on FIELD_DEFINITION|OBJECT|INTERFACE|UNION|ARGUMENT_DEFINITION|SCALAR|ENUM|ENUM_VALUE|INPUT_OBJECT|INPUT_FIELD_DEFINITION
+directive @tag(
+  name: String!
+) repeatable on FIELD_DEFINITION | OBJECT | INTERFACE | UNION | ARGUMENT_DEFINITION | SCALAR | ENUM | ENUM_VALUE | INPUT_OBJECT | INPUT_FIELD_DEFINITION
 
 directive @override(from: String!) on FIELD_DEFINITION
 
 directive @composeDirective(name: String!) repeatable on SCHEMA
 
-directive @extends on OBJECT|INTERFACE
+directive @extends on OBJECT | INTERFACE
 
 type Query {
   astronauts: [Astronaut!]!
