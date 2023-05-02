@@ -1,8 +1,8 @@
 import ballerina/graphql;
 import ballerina/log;
 
-final graphql:Client MISSIONS_CLIENT = check new graphql:Client("http://localhost:4002");
-final graphql:Client ASTRONAUTS_CLIENT = check new graphql:Client("http://localhost:4001");
+final graphql:Client MISSIONS_CLIENT = check new graphql:Client("http://localhost:5002");
+final graphql:Client ASTRONAUTS_CLIENT = check new graphql:Client("http://localhost:5001");
 
 isolated function getClient(string clientName) returns graphql:Client {
     match clientName {
@@ -78,6 +78,21 @@ isolated service on new graphql:Listener(PORT) {
         missionsResponse response = check MISSIONS_CLIENT->execute(queryString);
         Mission[] result = response.data.missions;
         Resolver resolver = new (queryPlan, result.toJson(), "Mission", propertiesNotResolved, ["missions"]);
+        json|error finalResult = resolver.getResult();
+        if finalResult is error {
+            return finalResult;
+        } else {
+            return finalResult.cloneWithType();
+        }
+    }
+    isolated remote function addMission(graphql:Field 'field, MissionInput missionInput) returns Mission|error {
+        QueryFieldClassifier classifier = new ('field, queryPlan, MISSIONS);
+        string fieldString = classifier.getFieldString();
+        UnResolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
+        string queryString = wrapwithMutation("addMission", fieldString, {"missionInput": getParamAsString(missionInput)});
+        addMissionResponse response = check MISSIONS_CLIENT->execute(queryString);
+        Mission result = response.data.addMission;
+        Resolver resolver = new (queryPlan, result.toJson(), "Mission", propertiesNotResolved, ["addMission"]);
         json|error finalResult = resolver.getResult();
         if finalResult is error {
             return finalResult;
