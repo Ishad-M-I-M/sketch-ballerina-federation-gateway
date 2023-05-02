@@ -3,8 +3,8 @@ subgraphs:
   astronauts:
     routing_url: http://localhost:5001
     schema:
-      file: ./astronauts.graphql
+      file: subgraphs/astronauts.graphql
   missions:
     routing_url: http://localhost:5002
     schema:
-      file: ./missions.graphql
+      file: subgraphs/missions.graphql

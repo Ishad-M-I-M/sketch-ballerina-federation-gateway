@@ -68,6 +68,17 @@ type Astronaut @key(fields: "id") {
   missions: [Mission!]!
 }
 
+type Mutation {
+  addMission(missionInput: MissionInput!): Mission!
+}
+
+input MissionInput {
+  designation: String!
+  startDate: String
+  endDate: String
+  crewIds: [Int!]!
+}
+
 scalar _Any
 
 scalar FieldSet
