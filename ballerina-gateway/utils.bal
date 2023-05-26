@@ -32,7 +32,7 @@ isolated function getKeyValueString(map<json> fieldMap) returns string {
 }
 
 // Prepare query string to resolve by query.
-public isolated function wrapwithQuery(string root, string fieldQuery, map<string>? args = ()) returns string {
+isolated function wrapwithQuery(string root, string fieldQuery, map<string>? args = ()) returns string {
     if args is () {
         return string `query
             {
@@ -54,7 +54,7 @@ public isolated function wrapwithQuery(string root, string fieldQuery, map<strin
     }
 }
 
-public isolated function wrapwithMutation(string root, string fieldQuery, map<string>? args = ()) returns string {
+isolated function wrapwithMutation(string root, string fieldQuery, map<string>? args = ()) returns string {
     if args is () {
         return string `mutation
             {
@@ -106,5 +106,35 @@ isolated function getParamAsString(anydata param) returns string {
         return string `{${string:'join(", ", ...paramList)}}`;
     } else {
         return param.toString();
+    }
+}
+
+isolated function addErrorsToGraphqlContext(graphql:Context context, graphql:ErrorDetail|graphql:ErrorDetail[] errors) {
+    if errors is graphql:ErrorDetail {
+        context.addError(errors);
+    } else {
+        foreach graphql:ErrorDetail e in errors {
+            context.addError(e);
+        }
+    }
+}
+
+isolated function appendUnableToResolveErrorDetail(graphql:ErrorDetail[] errors,
+        graphql:Field 'field) {
+    errors.push({
+        message: "Unable to resolve " + 'field.getName(),
+        path: 'field.getPath()
+    });
+}
+
+isolated function appendErrorDetailsFromResponse(graphql:ErrorDetail[] errors, graphql:ErrorDetail[]? responseErrors) {
+    if responseErrors is () {
+        return;
+    }
+    foreach graphql:ErrorDetail e in responseErrors {
+        errors.push({
+            message: e.message,
+            path: e.path
+        });
     }
 }
