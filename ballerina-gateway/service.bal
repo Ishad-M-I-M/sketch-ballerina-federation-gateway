@@ -38,11 +38,12 @@ isolated service on new graphql:Listener(PORT) {
             id: id
         };
         graphql:ErrorDetail[] errors = [];
-        if (response is graphql:ClientError) {
+        if response is graphql:ClientError {
             // Since still it is abled to resolve the other fields adding the error message in to the context and proceed.
             appendUnableToResolveErrorDetail(errors, 'field);
         } else {
             result = response.data.astronaut;
+            appendErrorDetailsFromResponse(errors, response?.errors);
         }
         Resolver resolver = new (queryPlan, result.toJson(), "Astronaut", propertiesNotResolved, ["astronaut"], errors);
         json finalResult = resolver.getResult();
@@ -57,11 +58,12 @@ isolated service on new graphql:Listener(PORT) {
         astronautsResponse|graphql:ClientError response = ASTRONAUTS_CLIENT->execute(queryString);
         graphql:ErrorDetail[] errors = [];
         Astronaut[] result = [];
-        if (response is graphql:ClientError) {
+        if response is graphql:ClientError {
             // Since still it is abled to resolve the other fields adding the error message in to the context and proceed.
             appendUnableToResolveErrorDetail(errors, 'field);
         } else {
             result = response.data.astronauts;
+            appendErrorDetailsFromResponse(errors, response?.errors);
         }
         Resolver resolver = new (queryPlan, result.toJson(), "Astronaut", propertiesNotResolved, ["astronauts"], errors);
         json finalResult = resolver.getResult();
@@ -81,11 +83,12 @@ isolated service on new graphql:Listener(PORT) {
             id: id
         };
         graphql:ErrorDetail[] errors = [];
-        if (response is graphql:ClientError) {
+        if response is graphql:ClientError {
             // Since still it is abled to resolve the other fields adding the error message in to the context and proceed.
             appendUnableToResolveErrorDetail(errors, 'field);
         } else {
             result = response.data.mission;
+            appendErrorDetailsFromResponse(errors, response?.errors);
         }
         Resolver resolver = new (queryPlan, result.toJson(), "Mission", propertiesNotResolved, ["mission"], errors);
         json finalResult = resolver.getResult();
@@ -100,11 +103,12 @@ isolated service on new graphql:Listener(PORT) {
         missionsResponse|graphql:ClientError response = MISSIONS_CLIENT->execute(queryString);
         graphql:ErrorDetail[] errors = [];
         Mission[] result = [];
-        if (response is graphql:ClientError) {
+        if response is graphql:ClientError {
             // Since still it is abled to resolve the other fields adding the error message in to the context and proceed.
             appendUnableToResolveErrorDetail(errors, 'field);
         } else {
             result = response.data.missions;
+            appendErrorDetailsFromResponse(errors, response?.errors);
         }
         Resolver resolver = new (queryPlan, result.toJson(), "Mission", propertiesNotResolved, ["missions"], errors);
         json finalResult = resolver.getResult();
@@ -117,12 +121,13 @@ isolated service on new graphql:Listener(PORT) {
         UnResolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
         string queryString = wrapwithMutation("addMission", fieldString, {"missionInput": getParamAsString(missionInput)});
         addMissionResponse|graphql:ClientError response = MISSIONS_CLIENT->execute(queryString);
-        if (response is graphql:ClientError) {
+        if response is graphql:ClientError {
             // Since still it is abled to resolve the other fields adding the error message in to the context and proceed.
             return error("Unable to perform the operation");
         }
         Mission result = response.data.addMission;
         graphql:ErrorDetail[] errors = [];
+        appendErrorDetailsFromResponse(errors, response?.errors);
         Resolver resolver = new (queryPlan, result.toJson(), "Mission", propertiesNotResolved, ["addMission"], errors);
         json finalResult = resolver.getResult();
         addErrorsToGraphqlContext(context, errors);

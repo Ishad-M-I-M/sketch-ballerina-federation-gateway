@@ -71,6 +71,7 @@ public class Resolver {
                         appendUnableToResolveErrorDetail(self.errors, 'record.'field);
                         continue;
                     }
+                    appendErrorDetailsFromResponse(self.errors, result?.errors);
                     self.compose(self.result, result.data._entities, self.getEffectivePath('record.'field));
 
                 } else {
@@ -83,6 +84,7 @@ public class Resolver {
                         appendUnableToResolveErrorDetail(self.errors, 'record.'field);
                         continue;
                     }
+                    appendErrorDetailsFromResponse(self.errors, result?.errors);
                     self.compose(self.result, result.data._entities, self.getEffectivePath('record.'field));
                     UnResolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
                     if (propertiesNotResolved.length() > 0) {

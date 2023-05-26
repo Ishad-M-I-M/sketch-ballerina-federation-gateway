@@ -57,8 +57,8 @@ distinct isolated service readonly class Mission {
         return self.designation;
     }
 
-    isolated resource function get startDate() returns string? {
-        return self.startDate;
+    isolated resource function get startDate() returns string?|error {
+        return error("Not implemented");
     }
 
     isolated resource function get endDate() returns string? {

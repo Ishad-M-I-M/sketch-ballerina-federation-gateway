@@ -125,5 +125,16 @@ isolated function appendUnableToResolveErrorDetail(graphql:ErrorDetail[] errors,
         message: "Unable to resolve " + 'field.getName(),
         path: 'field.getPath()
     });
+}
 
+isolated function appendErrorDetailsFromResponse(graphql:ErrorDetail[] errors, graphql:ErrorDetail[]? responseErrors) {
+    if responseErrors is () {
+        return;
+    }
+    foreach graphql:ErrorDetail e in responseErrors {
+        errors.push({
+            message: e.message,
+            path: e.path
+        });
+    }
 }
