@@ -1,6 +1,6 @@
 import ballerina/graphql;
 
-public type UnResolvableField record {|
+public type UnresolvableField record {|
     string parent;
     graphql:Field 'field;
 |};
@@ -18,6 +18,6 @@ public type QueryPlanEntry record {|
 |};
 
 type EntityResponse record {
+    graphql:ErrorDetail[] errors?;
     record {|json[] _entities;|} data;
-    graphql:ErrorDetail[] errors;
 };

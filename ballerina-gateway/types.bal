@@ -1,8 +1,8 @@
 import ballerina/graphql;
 
 public type Astronaut record {|
-    Mission?[]? missions?;
-    string? name?;
+    Mission[] missions?;
+    string name?;
     int id?;
 |};
 
@@ -11,37 +11,52 @@ public type Mission record {|
     int id?;
     string designation?;
     string? startDate?;
-    Astronaut?[]? crew?;
+    Astronaut[]? crew?;
 |};
 
 public type MissionInput record {|
+    int[] crewIds;
+    string? endDate;
     string designation;
     string? startDate;
-    string? endDate;
-    int[] crewIds;
 |};
 
-public type astronautResponse record {
-    record {|Astronaut astronaut;|} data;
-    graphql:ErrorDetail[] errors?;
-};
-
 public type astronautsResponse record {
-    record {|Astronaut[] astronauts;|} data;
     graphql:ErrorDetail[] errors?;
+    record {|Astronaut[] astronauts;|} data;
 };
 
-public type missionResponse record {
-    record {|Mission mission;|} data;
+public type astronautResponse record {
     graphql:ErrorDetail[] errors?;
+    record {|Astronaut astronaut;|} data;
+};
+
+public type serviceNameResponse record {
+    graphql:ErrorDetail[] errors?;
+    record {|string serviceName;|} data;
+};
+
+public type isExistResponse record {
+    graphql:ErrorDetail[] errors?;
+    record {|boolean isExist;|} data;
 };
 
 public type missionsResponse record {
-    record {|Mission[] missions;|} data;
     graphql:ErrorDetail[] errors?;
+    record {|Mission[] missions;|} data;
+};
+
+public type missionResponse record {
+    graphql:ErrorDetail[] errors?;
+    record {|Mission mission;|} data;
 };
 
 public type addMissionResponse record {
-    record {|Mission addMission;|} data;
     graphql:ErrorDetail[] errors?;
+    record {|Mission addMission;|} data;
+};
+
+public type setServiceNameResponse record {
+    graphql:ErrorDetail[] errors?;
+    record {|string setServiceName;|} data;
 };

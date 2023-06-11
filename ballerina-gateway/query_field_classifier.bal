@@ -2,7 +2,7 @@ import ballerina/graphql;
 
 public class QueryFieldClassifier {
 
-    // client for which the field peroperties are classified.
+    // client for which the field properties are classified.
     private string clientName;
 
     // field properties
@@ -14,7 +14,7 @@ public class QueryFieldClassifier {
 
     // unresolvable fields are pushed to the map along with the parentType name.
     // parent type name is needed to decide which type the subfield belongs for.
-    private UnResolvableField[] unresolvableFields;
+    private UnresolvableField[] unresolvableFields;
 
     // Query plan used to classify the fields.
     private final readonly & table<QueryPlanEntry> key(typename) queryPlan;
@@ -38,8 +38,8 @@ public class QueryFieldClassifier {
         self.fieldTypeName = fieldTypeName;
         self.fieldName = 'field.getName();
 
-        // iterate through all the 
-        foreach var subfield in subfields {
+        // iterate through all the
+        foreach graphql:Field subfield in subfields {
             if self.isResolvable(subfield, fieldTypeName, clientName) {
                 self.resolvableFields.push(subfield);
             } else {
@@ -57,7 +57,7 @@ public class QueryFieldClassifier {
         // If no field is availble to fetch with given client return nil.
 
         string[] properties = [];
-        foreach var 'field in self.resolvableFields {
+        foreach graphql:Field 'field in self.resolvableFields {
             // if scalar push name to properties array.
             if getOfType('field.getType()).kind == "SCALAR" {
                 properties.push('field.getName());
@@ -68,14 +68,14 @@ public class QueryFieldClassifier {
 
                 // Get the inner field string and push it to the properties array.
                 properties.push(string `${'field.getName()} { ${classifier.getFieldString()} }`);
-                UnResolvableField[] fields = classifier.getUnresolvableFields();
+                UnresolvableField[] fields = classifier.getUnresolvableFields();
                 self.unresolvableFields.push(...fields);
             }
         }
 
         // Push the key field even it is not requested if a key exists.
         string|error key = trap self.queryPlan.get(self.fieldTypeName).keys.get(self.clientName);
-        if !(key is error) {
+        if key !is error {
             if properties.indexOf(key) is () {
                 properties.push(key);
             }
@@ -92,7 +92,7 @@ public class QueryFieldClassifier {
         return self.resolvableFields;
     }
 
-    public isolated function getUnresolvableFields() returns UnResolvableField[] {
+    public isolated function getUnresolvableFields() returns UnresolvableField[] {
         return self.unresolvableFields;
     }
 
@@ -102,9 +102,8 @@ public class QueryFieldClassifier {
         if 'field.getName() == self.queryPlan.get(parentType).keys[clientName] ||
             self.queryPlan.get(parentType).fields.get('field.getName()).'client == clientName {
             return true;
-        } else {
-            return false;
         }
+        return false;
     }
 
 }

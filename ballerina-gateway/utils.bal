@@ -9,7 +9,7 @@ isolated function wrapWithEntityRepresentation(string typename, map<json>[] fiel
     }
     return string `query{
         _entities(
-            representations: [${string:'join(", ", ...representations)}]
+            representations: [${",".'join(...representations)}]
         ) {
             ... on ${typename} {
                 ${fieldQuery}
@@ -32,8 +32,14 @@ isolated function getKeyValueString(map<json> fieldMap) returns string {
 }
 
 // Prepare query string to resolve by query.
-isolated function wrapwithQuery(string root, string fieldQuery, map<string>? args = ()) returns string {
+isolated function wrapwithQuery(string root, string? fieldQuery = (), map<string>? args = ()) returns string {
     if args is () {
+        if fieldQuery is () {
+            return string `query
+                {
+                    ${root}
+                }`;
+        }
         return string `query
             {
                 ${root}{
@@ -45,6 +51,12 @@ isolated function wrapwithQuery(string root, string fieldQuery, map<string>? arg
         foreach var [key, value] in args.entries() {
             argsList.push(string `${key}: ${value}`);
         }
+        if fieldQuery is () {
+            return string `query
+                {
+                    ${root}(${string:'join(", ", ...argsList)})
+                }`;
+        }
         return string `query
             {
                 ${root}(${string:'join(", ", ...argsList)}){
@@ -54,8 +66,14 @@ isolated function wrapwithQuery(string root, string fieldQuery, map<string>? arg
     }
 }
 
-isolated function wrapwithMutation(string root, string fieldQuery, map<string>? args = ()) returns string {
+isolated function wrapwithMutation(string root, string? fieldQuery = (), map<string>? args = ()) returns string {
     if args is () {
+        if fieldQuery is () {
+            return string `mutation
+                {
+                    ${root}
+                }`;
+        }
         return string `mutation
             {
                 ${root}{
@@ -66,6 +84,12 @@ isolated function wrapwithMutation(string root, string fieldQuery, map<string>? 
         string[] argsList = [];
         foreach var [key, value] in args.entries() {
             argsList.push(string `${key}: ${value}`);
+        }
+        if fieldQuery is () {
+            return string `mutation
+                {
+                    ${root}(${string:'join(", ", ...argsList)})
+                }`;
         }
         return string `mutation
             {
@@ -111,10 +135,10 @@ isolated function getParamAsString(anydata param) returns string {
 
 isolated function addErrorsToGraphqlContext(graphql:Context context, graphql:ErrorDetail|graphql:ErrorDetail[] errors) {
     if errors is graphql:ErrorDetail {
-        context.addError(errors);
+        graphql:__addError(context, errors);
     } else {
         foreach graphql:ErrorDetail e in errors {
-            context.addError(e);
+            graphql:__addError(context, e);
         }
     }
 }
@@ -136,5 +160,15 @@ isolated function appendErrorDetailsFromResponse(graphql:ErrorDetail[] errors, g
             message: e.message,
             path: e.path
         });
+    }
+}
+
+isolated function mergeToResultJson(map<json> resultJson, map<json> responseJson) {
+    foreach var [key, value] in responseJson.entries() {
+        if resultJson[key] is map<json> {
+            mergeToResultJson(<map<json>>resultJson[key], <map<json>>value);
+        } else {
+            resultJson[key] = value;
+        }
     }
 }

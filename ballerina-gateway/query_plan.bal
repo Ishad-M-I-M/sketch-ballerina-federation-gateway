@@ -7,6 +7,7 @@ public final readonly & table<QueryPlanEntry> key(typename) queryPlan = table [
         ]},
     {typename: "Mission", keys: {"missions": "id"}, fields: table [
             {name: "endDate", 'type: "String", 'client: MISSIONS},
+            {name: "id", 'type: "Int", 'client: MISSIONS},
             {name: "designation", 'type: "String", 'client: MISSIONS},
             {name: "startDate", 'type: "String", 'client: MISSIONS},
             {name: "crew", 'type: "Astronaut", 'client: MISSIONS}

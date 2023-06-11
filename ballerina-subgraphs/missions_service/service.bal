@@ -57,15 +57,18 @@ distinct isolated service readonly class Mission {
         return self.designation;
     }
 
-    isolated resource function get startDate() returns string?|error {
-        return error("Not implemented");
+    isolated resource function get startDate() returns string? {
+        return self.startDate;
     }
 
     isolated resource function get endDate() returns string? {
         return self.endDate;
     }
 
-    isolated resource function get crew() returns Astronaut[] {
+    isolated resource function get crew() returns Astronaut[]?|error {
+        if (self.crewIds.length() == 0) {
+            return error("No crew members");
+        }
         return self.crewIds.map(isolated function(int id) returns Astronaut {
             return new (id);
         });

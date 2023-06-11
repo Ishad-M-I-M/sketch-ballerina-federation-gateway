@@ -2,7 +2,7 @@ import ballerina/graphql;
 
 public class Resolver {
 
-    private UnResolvableField[] toBeResolved;
+    private UnresolvableField[] toBeResolved;
 
     // The final result of the resolver. Created an composed while resolving by `resolve()`.
     private json result;
@@ -16,7 +16,7 @@ public class Resolver {
     public isolated function init(readonly & table<QueryPlanEntry> key(typename) queryPlan,
             json result,
             string resultType,
-            UnResolvableField[] unResolvableFields,
+            UnresolvableField[] unResolvableFields,
             string[] currentPath,
             graphql:ErrorDetail[] errors) {
         self.queryPlan = queryPlan;
@@ -39,7 +39,7 @@ public class Resolver {
     isolated function resolve() {
         // Resolve the fields which are not resolved yet.
         while self.toBeResolved.length() > 0 {
-            UnResolvableField 'record = self.toBeResolved.shift();
+            UnresolvableField 'record = self.toBeResolved.shift();
             string[] path = self.getEffectivePath('record.'field);
 
             // Check whether the field need to be resolved is nested by zero or one level.
@@ -86,7 +86,7 @@ public class Resolver {
                     }
                     appendErrorDetailsFromResponse(self.errors, result?.errors);
                     self.compose(self.result, result.data._entities, self.getEffectivePath('record.'field));
-                    UnResolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
+                    UnresolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
                     if (propertiesNotResolved.length() > 0) {
                         Resolver resolver = new (self.queryPlan, self.result, self.resultType, propertiesNotResolved, self.currentPath, self.errors);
                         resolver.resolve();
@@ -95,7 +95,7 @@ public class Resolver {
 
             } else {
                 // Cannot resolve directly and compose.
-                // Iterated through the self.result and resolve the fields by recursively calling the `resolve()` function 
+                // Iterated through the self.result and resolve the fields by recursively calling the `resolve()` function
                 // while updating the path.
 
                 string[] currentPath = self.currentPath.clone();
@@ -118,16 +118,10 @@ public class Resolver {
                         Resolver resolver = new (self.queryPlan, pointer[i], pointerType, ['record], currentPath, self.errors);
                         resolver.resolve();
                     }
-                } else {
-                    // Ideally should not be thrown
-                    panic error("Error: Cannot resolve the field.");
                 }
             }
-
         }
     }
-
-    // helper functions.
 
     // Compose results to the final result. i.e. to the `result` object.
     isolated function compose(json finalResult, json resultToCompose, string[] path) {
@@ -135,7 +129,7 @@ public class Resolver {
         json pointer = finalResult;
         string element = pathCopy.shift();
 
-        while (pathCopy.length() > 0) {
+        while pathCopy.length() > 0 {
             if element == "@" {
                 if resultToCompose is json[] && pointer is json[] {
                     foreach var i in 0 ..< resultToCompose.length() {
@@ -143,23 +137,16 @@ public class Resolver {
                     }
                     return;
                 }
-                else {
-                    // Ideally should not be thrown
-                    panic error("Error: Cannot compose into the result.");
-                }
             }
             else {
                 if pointer is map<json> {
-                    if (pointer.hasKey(element)) {
+                    if pointer.hasKey(element) {
                         pointer = pointer.get(element);
                     } else {
                         self.errors.push({
                             message: string `${element.toString()} is not found in ${path.toString()}`
                         });
                     }
-                } else {
-                    // Ideally should not be thrown
-                    panic error("Error: Cannot compose into the result.");
                 }
             }
             element = pathCopy.shift();
@@ -174,10 +161,6 @@ public class Resolver {
                 // Ideally should not be thrown
                 panic error("Error: Cannot compose into the result.");
             }
-
-        } else {
-            // Ideally should not be thrown
-            panic error("Error: Cannot compose into the result.");
         }
     }
 
