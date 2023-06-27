@@ -3,10 +3,11 @@ import ballerina/graphql.subgraph;
 
 @subgraph:Subgraph
 isolated service on new graphql:Listener(5001) {
-    private string serviceName;
+    private string serviceDescription;
     function init() {
-        self.serviceName = "Astronauts";
+        self.serviceDescription = "Service include the details of the astronauts' ids and names";
     }
+
     isolated resource function get astronauts() returns Astronaut[] {
         return astronauts;
     }
@@ -15,27 +16,19 @@ isolated service on new graphql:Listener(5001) {
         return getAstronaut(id);
     }
 
-    isolated resource function get serviceName() returns string {
+    isolated resource function get astronautServiceDescription() returns string {
         lock {
-            return self.serviceName;
+            return self.serviceDescription;
         }
     }
 
-    isolated resource function get isExist(string name) returns boolean {
-        foreach var astronaut in astronauts {
-            if (astronaut.name == name) {
-                return true;
-            }
+    isolated remote function setAstronautServiceDescription(string description) returns string {
+        lock {
+            self.serviceDescription = description;
+            return self.serviceDescription;
         }
-        return false;
     }
 
-    isolated remote function setServiceName(string name) returns string {
-        lock {
-            self.serviceName = name;
-            return self.serviceName;
-        }
-    }
 }
 
 @subgraph:Entity {
@@ -45,6 +38,7 @@ isolated service on new graphql:Listener(5001) {
         return getAstronaut(id);
     }
 }
+
 type Astronaut record {|
     int id;
     string name;

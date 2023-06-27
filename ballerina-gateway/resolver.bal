@@ -8,35 +8,26 @@ public class Resolver {
     private json result;
     private string resultType;
     private string[] currentPath;
-    private graphql:ErrorDetail[] errors;
 
     // Query plan used to classify the fields.
     private final readonly & table<QueryPlanEntry> key(typename) queryPlan;
 
-    public isolated function init(readonly & table<QueryPlanEntry> key(typename) queryPlan,
-            json result,
-            string resultType,
-            UnresolvableField[] unResolvableFields,
-            string[] currentPath,
-            graphql:ErrorDetail[] errors) {
+    public isolated function init(readonly & table<QueryPlanEntry> key(typename) queryPlan, json result, string resultType, UnresolvableField[] unResolvableFields, string[] currentPath) {
         self.queryPlan = queryPlan;
         self.result = result;
         self.resultType = resultType;
         self.toBeResolved = unResolvableFields;
         self.currentPath = currentPath; // Path upto the result fields.
-        self.errors = errors;
     }
 
-    public isolated function getResult() returns json {
-        if self.result is json[] && self.result.length == 0 {
-            return null;
-        } else if self.toBeResolved.length() > 0 {
-            self.resolve();
+    public isolated function getResult() returns json|error {
+        if self.toBeResolved.length() > 0 {
+            check self.resolve();
         }
         return self.result;
     }
 
-    isolated function resolve() {
+    isolated function resolve() returns error? {
         // Resolve the fields which are not resolved yet.
         while self.toBeResolved.length() > 0 {
             UnresolvableField 'record = self.toBeResolved.shift();
@@ -54,42 +45,24 @@ public class Resolver {
                     path = path.slice(0, path.length() - 2);
                 }
 
-                map<json>[]|error keyFieldsWithValues = self.getKeyFieldsWithValues(self.result, self.resultType, clientName, path);
-                if keyFieldsWithValues is error {
-                    self.errors.push({
-                        message: keyFieldsWithValues.message(),
-                        path: 'record.'field.getPath()
-                    });
-                    continue;
-                }
+                map<json>[] keyFieldsWithValues = check self.getKeyFieldsWithValues(self.result, self.resultType, clientName, path);
 
                 if getOfType('record.'field.getType()).kind == "SCALAR" {
                     // If the field type is a scalar type, just pass the field name wrapped with entity representation.
                     string queryString = wrapWithEntityRepresentation('record.parent, keyFieldsWithValues, 'record.'field.getName());
-                    EntityResponse|graphql:ClientError result = 'client->execute(queryString);
-                    if result is graphql:ClientError {
-                        appendUnableToResolveErrorDetail(self.errors, 'record.'field);
-                        continue;
-                    }
-                    appendErrorDetailsFromResponse(self.errors, result?.errors);
-                    self.compose(self.result, result.data._entities, self.getEffectivePath('record.'field));
-
+                    EntityResponse result = check 'client->execute(queryString);
+                    check self.compose(self.result, result.data._entities, self.getEffectivePath('record.'field));
                 } else {
                     // Else need to classify the fields and resolve them accordingly.
                     QueryFieldClassifier classifier = new ('record.'field, self.queryPlan, clientName);
                     string fieldString = classifier.getFieldStringWithRoot();
                     string queryString = wrapWithEntityRepresentation('record.parent, keyFieldsWithValues, fieldString);
-                    EntityResponse|graphql:ClientError result = 'client->execute(queryString);
-                    if result is graphql:ClientError {
-                        appendUnableToResolveErrorDetail(self.errors, 'record.'field);
-                        continue;
-                    }
-                    appendErrorDetailsFromResponse(self.errors, result?.errors);
-                    self.compose(self.result, result.data._entities, self.getEffectivePath('record.'field));
+                    EntityResponse response = check 'client->execute(queryString);
+                    check self.compose(self.result, response.data._entities, self.getEffectivePath('record.'field));
                     UnresolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
-                    if (propertiesNotResolved.length() > 0) {
-                        Resolver resolver = new (self.queryPlan, self.result, self.resultType, propertiesNotResolved, self.currentPath, self.errors);
-                        resolver.resolve();
+                    if propertiesNotResolved.length() > 0 {
+                        Resolver resolver = new (self.queryPlan, self.result, self.resultType, propertiesNotResolved, self.currentPath);
+                        check resolver.resolve();
                     }
                 }
 
@@ -115,16 +88,18 @@ public class Resolver {
                 // Iterate over the list in current pointer and compose the results into the inner fields.
                 if pointer is json[] {
                     foreach var i in 0 ..< pointer.length() {
-                        Resolver resolver = new (self.queryPlan, pointer[i], pointerType, ['record], currentPath, self.errors);
-                        resolver.resolve();
+                        Resolver resolver = new (self.queryPlan, pointer[i], pointerType, ['record], currentPath);
+                        check resolver.resolve();
                     }
+                } else {
+                    return error("Error: Cannot resolve the field.");
                 }
             }
         }
     }
 
     // Compose results to the final result. i.e. to the `result` object.
-    isolated function compose(json finalResult, json resultToCompose, string[] path) {
+    isolated function compose(json finalResult, json resultToCompose, string[] path) returns error? {
         string[] pathCopy = path.clone();
         json pointer = finalResult;
         string element = pathCopy.shift();
@@ -133,20 +108,23 @@ public class Resolver {
             if element == "@" {
                 if resultToCompose is json[] && pointer is json[] {
                     foreach var i in 0 ..< resultToCompose.length() {
-                        self.compose(pointer[i], resultToCompose[i], pathCopy);
+                        check self.compose(pointer[i], resultToCompose[i], pathCopy);
                     }
                     return;
                 }
+                // Ideally should not be thrown
+                return error("Error: Cannot compose into the result.");
             }
             else {
                 if pointer is map<json> {
                     if pointer.hasKey(element) {
                         pointer = pointer.get(element);
                     } else {
-                        self.errors.push({
-                            message: string `${element.toString()} is not found in ${path.toString()}`
-                        });
+                        return error(element.toString() + " is not found in pointer :" + pointer.toString());
                     }
+                } else {
+                    // Ideally should not be thrown
+                    return error("Error: Cannot compose into the result.");
                 }
             }
             element = pathCopy.shift();
@@ -159,8 +137,12 @@ public class Resolver {
                 pointer[element] = (<map<json>>resultToCompose[0])[element];
             } else {
                 // Ideally should not be thrown
-                panic error("Error: Cannot compose into the result.");
+                return error("Error: Cannot compose into the result.");
             }
+
+        } else {
+            // Ideally should not be thrown
+            return error("Error: Cannot compose into the result.");
         }
     }
 
@@ -186,7 +168,7 @@ public class Resolver {
                 keyField[key] = (<map<json>>pointer)[key];
                 fields.push(keyField);
             } else {
-                return error(string `${key} field is not found in path ${path.toString()}`);
+                return error("Error: Cannot get key field from the result.");
             }
 
             return fields;

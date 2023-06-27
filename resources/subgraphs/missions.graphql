@@ -51,6 +51,7 @@ directive @extends on OBJECT | INTERFACE
 type Query {
   missions: [Mission!]!
   mission(id: Int!): Mission!
+  missionServiceDescription: String!
   _service: _Service!
   _entities(representations: [_Any!]!): [_Entity]!
 }
@@ -60,7 +61,7 @@ type Mission @key(fields: "id", resolvable: false) {
   designation: String!
   startDate: String
   endDate: String
-  crew: [Astronaut!]!
+  crew: [Astronaut!]
 }
 
 type Astronaut @key(fields: "id") {
@@ -70,6 +71,7 @@ type Astronaut @key(fields: "id") {
 
 type Mutation {
   addMission(missionInput: MissionInput!): Mission!
+  setMissionServiceDescription(description: String!): String!
 }
 
 input MissionInput {

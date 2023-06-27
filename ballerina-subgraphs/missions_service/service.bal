@@ -10,6 +10,11 @@ public type MissionInput record {|
 
 @subgraph:Subgraph
 isolated service on new graphql:Listener(5002) {
+    private string serviceDescription;
+    function init() {
+        self.serviceDescription = "Service include the details of the missions and ids of the astronauts";
+    }
+
     resource function get missions() returns Mission[] {
         return missions;
     }
@@ -28,6 +33,19 @@ isolated service on new graphql:Listener(5002) {
         return missions.filter(isolated function(Mission mission) returns boolean {
             return mission.id == id;
         })[0];
+    }
+
+    isolated resource function get missionServiceDescription() returns string {
+        lock {
+            return self.serviceDescription;
+        }
+    }
+
+    isolated remote function setMissionServiceDescription(string description) returns string {
+        lock {
+            self.serviceDescription = description;
+            return self.serviceDescription;
+        }
     }
 }
 

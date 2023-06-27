@@ -25,126 +25,111 @@ isolated service on new graphql:Listener(PORT) {
         log:printInfo(string `💃 Server ready at port: ${PORT}`);
     }
 
-    isolated resource function get astronauts(graphql:Field 'field, graphql:Context context) returns Astronaut[]|error {
+    isolated resource function get astronauts(graphql:Field 'field) returns Astronaut[]|error {
         QueryFieldClassifier classifier = new ('field, queryPlan, ASTRONAUTS);
         string fieldString = classifier.getFieldString();
         UnresolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
         string queryString = wrapwithQuery("astronauts", fieldString);
-        astronautsResponse|graphql:ClientError response = ASTRONAUTS_CLIENT->execute(queryString);
-        Astronaut[]? result = null;
-        graphql:ErrorDetail[] errors = [];
-        if response is graphql:ClientError {
-            appendUnableToResolveErrorDetail(errors, 'field);
+        astronautsResponse response = check ASTRONAUTS_CLIENT->execute(queryString);
+        Astronaut[] result = response.data.astronauts;
+        Resolver resolver = new (queryPlan, result.toJson(), "Astronaut", propertiesNotResolved, ["astronauts"]);
+        json|error finalResult = resolver.getResult();
+        if finalResult is error {
+            return finalResult;
         } else {
-            result = response.data.astronauts;
-            appendErrorDetailsFromResponse(errors, response?.errors);
+            return finalResult.cloneWithType();
         }
-        Resolver resolver = new (queryPlan, result.toJson(), "Astronaut", propertiesNotResolved, ["astronauts"], errors);
-        json finalResult = resolver.getResult();
-        addErrorsToGraphqlContext(context, errors);
-        return finalResult.cloneWithType();
     }
-
-    isolated resource function get astronaut(graphql:Field 'field, graphql:Context context, int id) returns Astronaut?|error {
+    isolated resource function get astronaut(graphql:Field 'field, int id) returns Astronaut?|error {
         QueryFieldClassifier classifier = new ('field, queryPlan, ASTRONAUTS);
         string fieldString = classifier.getFieldString();
         UnresolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
         string queryString = wrapwithQuery("astronaut", fieldString, {"id": getParamAsString(id)});
-        astronautResponse|graphql:ClientError response = ASTRONAUTS_CLIENT->execute(queryString);
-        map<json> result = {"id": id};
-        graphql:ErrorDetail[] errors = [];
-        if response is graphql:ClientError {
-            appendUnableToResolveErrorDetail(errors, 'field);
+        astronautResponse response = check ASTRONAUTS_CLIENT->execute(queryString);
+        Astronaut? result = response.data.astronaut;
+        Resolver resolver = new (queryPlan, result.toJson(), "Astronaut", propertiesNotResolved, ["astronaut"]);
+        json|error finalResult = resolver.getResult();
+        if finalResult is error {
+            return finalResult;
         } else {
-            mergeToResultJson(result, <map<json>>response.data.astronaut.toJson());
-            appendErrorDetailsFromResponse(errors, response?.errors);
+            return finalResult.cloneWithType();
         }
-        Resolver resolver = new (queryPlan, result.toJson(), "Astronaut", propertiesNotResolved, ["astronaut"], errors);
-        json finalResult = resolver.getResult();
-        addErrorsToGraphqlContext(context, errors);
-        return finalResult.cloneWithType();
     }
-
-    isolated resource function get serviceName(graphql:Field 'field, graphql:Context context) returns string|error {
-        string queryString = wrapwithQuery("serviceName", ());
-        serviceNameResponse|graphql:ClientError response = ASTRONAUTS_CLIENT->execute(queryString);
+    isolated resource function get astronautServiceDescription(graphql:Field 'field, graphql:Context context) returns string|error {
+        string queryString = wrapwithQuery("astronautServiceDescription", ());
+        astronautServiceDescriptionResponse|graphql:ClientError response = ASTRONAUTS_CLIENT->execute(queryString);
         if response is graphql:ClientError {
-            return error("Unable to resolve : serviceName");
+            return error("Unable to resolve : astronautServiceDescription");
         }
-        return response.data.serviceName;
+        return response.data.astronautServiceDescription;
     }
-    isolated resource function get isExist(graphql:Field 'field, graphql:Context context, string name) returns boolean|error {
-        string queryString = wrapwithQuery("isExist", (), {"name": getParamAsString(name)});
-        isExistResponse|graphql:ClientError response = ASTRONAUTS_CLIENT->execute(queryString);
-        if response is graphql:ClientError {
-            return error("Unable to resolve : isExist");
-        }
-        return response.data.isExist;
-    }
-    isolated resource function get missions(graphql:Field 'field, graphql:Context context) returns Mission[]|error {
+    isolated resource function get missions(graphql:Field 'field) returns Mission[]|error {
         QueryFieldClassifier classifier = new ('field, queryPlan, MISSIONS);
         string fieldString = classifier.getFieldString();
         UnresolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
         string queryString = wrapwithQuery("missions", fieldString);
-        missionsResponse|graphql:ClientError response = MISSIONS_CLIENT->execute(queryString);
-        Mission[]? result = null;
-        graphql:ErrorDetail[] errors = [];
-        if response is graphql:ClientError {
-            appendUnableToResolveErrorDetail(errors, 'field);
+        missionsResponse response = check MISSIONS_CLIENT->execute(queryString);
+        Mission[] result = response.data.missions;
+        Resolver resolver = new (queryPlan, result.toJson(), "Mission", propertiesNotResolved, ["missions"]);
+        json|error finalResult = resolver.getResult();
+        if finalResult is error {
+            return finalResult;
         } else {
-            result = response.data.missions;
-            appendErrorDetailsFromResponse(errors, response?.errors);
+            return finalResult.cloneWithType();
         }
-        Resolver resolver = new (queryPlan, result.toJson(), "Mission", propertiesNotResolved, ["missions"], errors);
-        json finalResult = resolver.getResult();
-        addErrorsToGraphqlContext(context, errors);
-        return finalResult.cloneWithType();
     }
-
-    isolated resource function get mission(graphql:Field 'field, graphql:Context context, int id) returns Mission|error {
+    isolated resource function get mission(graphql:Field 'field, int id) returns Mission|error {
         QueryFieldClassifier classifier = new ('field, queryPlan, MISSIONS);
         string fieldString = classifier.getFieldString();
         UnresolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
         string queryString = wrapwithQuery("mission", fieldString, {"id": getParamAsString(id)});
-        missionResponse|graphql:ClientError response = MISSIONS_CLIENT->execute(queryString);
-        map<json> result = {"id": id};
-        graphql:ErrorDetail[] errors = [];
-        if response is graphql:ClientError {
-            appendUnableToResolveErrorDetail(errors, 'field);
+        missionResponse response = check MISSIONS_CLIENT->execute(queryString);
+        Mission result = response.data.mission;
+        Resolver resolver = new (queryPlan, result.toJson(), "Mission", propertiesNotResolved, ["mission"]);
+        json|error finalResult = resolver.getResult();
+        if finalResult is error {
+            return finalResult;
         } else {
-            mergeToResultJson(result, <map<json>>response.data.mission.toJson());
-            appendErrorDetailsFromResponse(errors, response?.errors);
+            return finalResult.cloneWithType();
         }
-        Resolver resolver = new (queryPlan, result.toJson(), "Mission", propertiesNotResolved, ["mission"], errors);
-        json finalResult = resolver.getResult();
-        addErrorsToGraphqlContext(context, errors);
-        return finalResult.cloneWithType();
     }
-
-    isolated remote function addMission(graphql:Field 'field, graphql:Context context, MissionInput missionInput) returns Mission|error {
+    isolated resource function get missionServiceDescription(graphql:Field 'field, graphql:Context context) returns string|error {
+        string queryString = wrapwithQuery("missionServiceDescription", ());
+        missionServiceDescriptionResponse|graphql:ClientError response = MISSIONS_CLIENT->execute(queryString);
+        if response is graphql:ClientError {
+            return error("Unable to resolve : missionServiceDescription");
+        }
+        return response.data.missionServiceDescription;
+    }
+    isolated remote function setAstronautServiceDescription(graphql:Field 'field, graphql:Context context, string description) returns string|error {
+        string queryString = wrapwithMutation("setAstronautServiceDescription", (), {"description": getParamAsString(description)});
+        setAstronautServiceDescriptionResponse|graphql:ClientError response = ASTRONAUTS_CLIENT->execute(queryString);
+        if response is graphql:ClientError {
+            return error("Unable to resolve : setAstronautServiceDescription");
+        }
+        return response.data.setAstronautServiceDescription;
+    }
+    isolated remote function addMission(graphql:Field 'field, MissionInput missionInput) returns Mission|error {
         QueryFieldClassifier classifier = new ('field, queryPlan, MISSIONS);
         string fieldString = classifier.getFieldString();
         UnresolvableField[] propertiesNotResolved = classifier.getUnresolvableFields();
         string queryString = wrapwithMutation("addMission", fieldString, {"missionInput": getParamAsString(missionInput)});
-        addMissionResponse|graphql:ClientError response = MISSIONS_CLIENT->execute(queryString);
-        if response is graphql:ClientError {
-            return error("Unable to perform the operation");
-        }
+        addMissionResponse response = check MISSIONS_CLIENT->execute(queryString);
         Mission result = response.data.addMission;
-        graphql:ErrorDetail[] errors = [];
-        appendErrorDetailsFromResponse(errors, response?.errors);
-        Resolver resolver = new (queryPlan, result.toJson(), "Mission", propertiesNotResolved, ["addMission"], errors);
-        json finalResult = resolver.getResult();
-        addErrorsToGraphqlContext(context, errors);
-        return finalResult.cloneWithType();
-    }
-
-    isolated remote function setServiceName(graphql:Field 'field, graphql:Context context, string name) returns string|error {
-        string queryString = wrapwithMutation("setServiceName", (), {"name": getParamAsString(name)});
-        setServiceNameResponse|graphql:ClientError response = ASTRONAUTS_CLIENT->execute(queryString);
-        if response is graphql:ClientError {
-            return error("Unable to resolve : setServiceName");
+        Resolver resolver = new (queryPlan, result.toJson(), "Mission", propertiesNotResolved, ["addMission"]);
+        json|error finalResult = resolver.getResult();
+        if finalResult is error {
+            return finalResult;
+        } else {
+            return finalResult.cloneWithType();
         }
-        return response.data.setServiceName;
+    }
+    isolated remote function setMissionServiceDescription(graphql:Field 'field, graphql:Context context, string description) returns string|error {
+        string queryString = wrapwithMutation("setMissionServiceDescription", (), {"description": getParamAsString(description)});
+        setMissionServiceDescriptionResponse|graphql:ClientError response = MISSIONS_CLIENT->execute(queryString);
+        if response is graphql:ClientError {
+            return error("Unable to resolve : setMissionServiceDescription");
+        }
+        return response.data.setMissionServiceDescription;
     }
 }

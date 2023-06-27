@@ -51,6 +51,7 @@ directive @extends on OBJECT | INTERFACE
 type Query {
   astronauts: [Astronaut!]!
   astronaut(id: Int!): Astronaut
+  astronautServiceDescription: String!
   _service: _Service!
   _entities(representations: [_Any!]!): [_Entity]!
 }
@@ -58,6 +59,10 @@ type Query {
 type Astronaut @key(fields: "id") {
   id: Int!
   name: String!
+}
+
+type Mutation {
+  setAstronautServiceDescription(description: String!): String!
 }
 
 scalar _Any
